@@ -102,9 +102,9 @@ func drawHeader(t Translation) {
 }
 
 func drawBox(title, content string, c *color.Color) {
-	c.Printf("┌── %s %s\n", title, strings.Repeat("─", 58-len(title)))
+	c.Printf("┌── %s\n", title)
 	fmt.Printf("│  %s\n", content)
-	c.Println("└" + strings.Repeat("─", 61))
+	c.Println("└" + strings.Repeat("─", 70))
 }
 
 // --- LOGIQUE TECHNIQUE ---
