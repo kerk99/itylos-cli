@@ -86,6 +86,7 @@ var Locales = map[string]Translation{
 func drawLogo() {
 	w := color.New(color.FgWhite, color.Bold); y := color.New(color.FgCyan, color.Bold)
 	fmt.Println("")
+	// Logo bicolore avec le "Y" en turquoise
 	w.Print("  ██╗████████╗") ; y.Print("██╗   ██╗") ; w.Println("██║      ██████╗ ███████╗")
 	w.Print("  ██║╚══██╔══╝") ; y.Print("╚██╗ ██╔╝") ; w.Println("██║     ██╔═══██╗██╔════╝")
 	w.Print("  ██║   ██║    ") ; y.Print("╚████╔╝ ") ; w.Println("██║     ██║   ██║███████╗")
@@ -102,9 +103,10 @@ func drawHeader(t Translation) {
 	fmt.Println(strings.Repeat("─", 62))
 }
 
+// drawBox CORRIGÉ : Empêche le crash avec les accents UTF-8
 func drawBox(title, content string, c *color.Color) {
 	maxWidth := 78
-	tLen := len([]rune(title)) // Calcul sécurisé pour UTF-8/Accents
+	tLen := len([]rune(title)) // Calcul sur les caractères réels, pas les octets
 	repeatCount := maxWidth - tLen - 5
 	if repeatCount < 0 { repeatCount = 0 }
 	c.Printf("┌── %s %s\n", title, strings.Repeat("─", repeatCount))
@@ -163,9 +165,11 @@ func main() {
 
 		color.New(color.FgMagenta, color.Bold).Printf("\n%s\n", t.Examples)
 		if lang == "fr" {
-			color.White("  itylos send \"Voici le code d'accès : 5678\" -d 24h")
+			color.White("  itylos send \"Voici le code d'accès : 5678\" -d 1h")
+			color.White("  itylos send \"Document confidentiel pour demain\" -d 24h")
 		} else {
-			color.White("  itylos send \"Here is the access code: 5678\" -d 24h")
+			color.White("  itylos send \"Here is the access code: 5678\" -d 1h")
+			color.White("  itylos send \"Confidential document for tomorrow\" -d 24h")
 		}
 		os.Exit(0)
 	}
