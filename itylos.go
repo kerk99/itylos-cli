@@ -102,9 +102,10 @@ func drawHeader(t Translation) {
 	fmt.Println(strings.Repeat("─", 62))
 }
 
+// drawBox CORRIGÉ : Empêche le crash avec les accents UTF-8
 func drawBox(title, content string, c *color.Color) {
 	maxWidth := 78
-	tLen := len([]rune(title)) // Calcul sur les caractères réels pour UTF-8
+	tLen := len([]rune(title)) 
 	repeatCount := maxWidth - tLen - 5
 	if repeatCount < 0 { repeatCount = 0 }
 	c.Printf("┌── %s %s\n", title, strings.Repeat("─", repeatCount))
@@ -112,18 +113,22 @@ func drawBox(title, content string, c *color.Color) {
 	c.Println("└" + strings.Repeat("─", maxWidth-1))
 }
 
+func encryptLocal(text string, key []byte) string {
+	block, _ := aes.NewCipher(key); gcm, _ := cipher.NewGCM(block)
+	nonce := make([]byte, gcm.NonceSize()); io.ReadFull(rand.Reader, nonce)
+	sealed := gcm.Seal(nil, nonce, []byte(text), nil)
+	return base64.StdEncoding.EncodeToString(nonce) + "." + base64.StdEncoding.EncodeToString(sealed)
+}
+
 func send(msg, duration, lang string) {
 	t := Locales[lang]
 	if msg == "" { color.Red(t.Err); return }
+	
 	k := make([]byte, 32); io.ReadFull(rand.Reader, k)
 	keyFrag := base64.RawURLEncoding.EncodeToString(k)
-	
-	block, _ := aes.NewCipher(k); gcm, _ := cipher.NewGCM(block)
-	nonce := make([]byte, gcm.NonceSize()); io.ReadFull(rand.Reader, nonce)
-	sealed := gcm.Seal(nil, nonce, []byte(msg), nil)
-	payload := base64.StdEncoding.EncodeToString(nonce) + "." + base64.StdEncoding.EncodeToString(sealed)
-
+	payload := encryptLocal(msg, k)
 	data, _ := json.Marshal(map[string]string{"content": payload, "duration": duration})
+	
 	resp, err := http.Post(API_URL+"?action=save&l="+lang, "application/json", bytes.NewBuffer(data))
 	if err != nil { color.Red("✘ Service indisponible."); return }
 	defer resp.Body.Close()
@@ -137,6 +142,21 @@ func send(msg, duration, lang string) {
 	color.New(color.FgHiBlack, color.Italic).Println("\n " + t.Note + "\n")
 }
 
+func update() {
+	color.Cyan("\r   🦋 Connexion au Sanctuaire ITYLOS...")
+	resp, err := http.Get(API_URL + "?action=version")
+	if err != nil { color.Red("\n ✘ Impossible de vérifier les mises à jour."); return }
+	defer resp.Body.Close()
+	var res map[string]string
+	json.NewDecoder(resp.Body).Decode(&res)
+	if res["latest"] != VERSION {
+		color.Yellow("\n ✨ NOUVELLE VERSION DISPONIBLE : %s", res["latest"])
+		fmt.Printf(" 📥 Téléchargez l'Early Access ici : %s\n", res["url"])
+	} else {
+		color.Green("\n ✔ Terminal à jour (%s).", VERSION)
+	}
+}
+
 func main() {
 	langPtr := flag.String("l", "fr", "Langue"); durPtr := flag.String("d", "1h", "Durée"); flag.Parse()
 	lang := *langPtr
@@ -147,14 +167,17 @@ func main() {
 	if len(args) < 1 {
 		drawHeader(t)
 		color.New(color.FgCyan).Println(t.Mission)
+		
+		// LIGNE DES OPTIONS RÉTABLIE
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
+
 		color.New(color.FgYellow, color.Bold).Printf("\n%s\n", t.Usage)
 		fmt.Println("  itylos send \"message\"   : Sécuriser un message")
 		fmt.Println("  itylos mission          : Notre manifeste de bienveillance")
 		fmt.Println("  itylos faq              : Questions fréquentes")
-		fmt.Println("  itylos status           : État du service")
+		fmt.Println("  itylos update           : Rechercher des mises à jour")
+		fmt.Println("  itylos status           : Vérifier si le service est prêt")
 		
-		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options) // LIGNE RÉTABLIE
-
 		color.New(color.FgMagenta, color.Bold).Printf("\n%s\n", t.Examples)
 		if lang == "fr" {
 			color.White("  itylos send \"Voici le code d'accès temporaire : 8822\" -d 1h")
@@ -175,6 +198,8 @@ func main() {
 	case "faq":
 		drawHeader(t)
 		color.Cyan(t.Faq)
+	case "update":
+		update()
 	case "status":
 		resp, _ := http.Get(DOMAIN)
 		if resp != nil && resp.StatusCode == 200 { color.Green("\n ✔ SERVICE OPÉRATIONNEL. 🦋") }
