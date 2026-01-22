@@ -135,6 +135,6 @@ Retours, audits et contributions bienvenus.
 
 ## 🦋 Note finale
 
-**Souveraineté activée. Votre message est protégé.**  
-**Sovereignty active. Your message is protected.**
-https://itylos.com/
+**Souveraineté activée. Votre message est protégé. https://itylos.com/fr/ **  
+**Sovereignty active. Your message is protected. https://itylos.com/en/ **
+
