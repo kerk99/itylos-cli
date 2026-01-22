@@ -103,7 +103,7 @@ func drawHeader(t Translation) {
 
 func drawBox(title, content string, c *color.Color) {
 	maxWidth := 78
-	tLen := len([]rune(title)) // Calcul sécurisé UTF-8
+	tLen := len([]rune(title)) 
 	repeatCount := maxWidth - tLen - 5
 	if repeatCount < 0 { repeatCount = 0 }
 	c.Printf("┌── %s %s\n", title, strings.Repeat("─", repeatCount))
@@ -125,7 +125,7 @@ func update() {
 	json.NewDecoder(resp.Body).Decode(&res)
 	if res["latest"] != VERSION {
 		color.Yellow("\n ✨ NOUVELLE VERSION DISPONIBLE : %s", res["latest"])
-		fmt.Printf(" 📥 Téléchargez l'Early Access ici : %s\n", res["url"])
+		fmt.Printf(" 📥 Téléchargez l'outil ici : %s\n", res["url"])
 	} else {
 		color.Green("\n ✔ Votre terminal ITYLOS est à jour (%s).", VERSION)
 	}
@@ -180,11 +180,10 @@ func main() {
 		
 		color.New(color.FgMagenta, color.Bold).Printf("\n%s\n", t.Examples)
 		if lang == "fr" {
-			color.White("  itylos send \"Voici le code d'accès temporaire : 8822\" -d 1h")
-			color.White("  itylos send \"Document confidentiel pour la réunion de demain\" -d 24h")
+			color.White("  itylos send \"Voici le code d'accès : 5678\" -d 1h")
+			color.White("  itylos send \"Document confidentiel\" -d 24h")
 		} else {
-			color.White("  itylos send \"Temporary access code: 8822\" -d 1h")
-			color.White("  itylos send \"Confidential document for tomorrow's meeting\" -d 24h")
+			color.White("  itylos send \"Here is the access code: 5678\" -d 1h")
 		}
 		os.Exit(0)
 	}
@@ -196,7 +195,7 @@ func main() {
 	case "mission":
 		drawHeader(t)
 		color.Cyan(t.Mission)
-		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options) // Options aussi ici
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
 	case "faq":
 		drawHeader(t)
 		color.Cyan(t.Faq)
