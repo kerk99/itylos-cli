@@ -8,48 +8,34 @@ require_once('../../inc/functions.php');
 require_once('../../inc/lang.php'); 
 
 const CURRENT_VERSION = "1.0.1-beta";
-const UPDATE_URL      = "https://itylos.com/download/itylos.exe";
 
 header('Content-Type: application/json; charset=utf-8');
 
 $action = $_GET['action'] ?? '';
 
-/**
- * ACTION : VERSION
- */
 if ($action === 'version') {
-    echo json_encode([
-        'status'  => 'success',
-        'latest'  => CURRENT_VERSION,
-        'url'     => UPDATE_URL
-    ]);
+    echo json_encode(['status' => 'success', 'latest' => CURRENT_VERSION]);
     exit;
 }
 
-/**
- * ACTION : SAVE
- */
 if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
     $payload = $data['content'] ?? '';
-    
     if (empty($payload)) { exit(json_encode(['status' => 'error'])); }
 
     // Double-Shield Protocol
     $method = 'aes-256-gcm';
     $iv_len = openssl_cipher_iv_length($method);
-    $iv     = openssl_random_pseudo_bytes($iv_len);
-    $tag    = ""; 
+    $iv = openssl_random_pseudo_bytes($iv_len);
+    $tag = ""; 
     $encrypted = openssl_encrypt($payload, $method, ENCRYPTION_KEY, OPENSSL_RAW_DATA, $iv, $tag, "", 16);
     $final_blob = base64_encode($iv . $tag . $encrypted);
 
-    // CORRECTION ID : On utilise un ID aléatoire unique au lieu d'un texte statique
-    $secret_id = bin2hex(random_bytes(6)); // Génère quelque chose comme "a1b2c3d4e5f6"
-    
-    $m_token   = bin2hex(random_bytes(32)); 
+    // Identifiant aléatoire pur (ex: itylos.com/v/311ac889)
+    $secret_id = bin2hex(random_bytes(6)); 
+    $m_token = bin2hex(random_bytes(32)); 
     $durations = ['1h' => 3600, '24h' => 86400, '7d' => 604800];
-    $seconds   = $durations[$data['duration'] ?? '1h'] ?? 3600;
-    $expires_at = date('Y-m-d H:i:s', time() + $seconds);
+    $expires_at = date('Y-m-d H:i:s', time() + ($durations[$data['duration'] ?? '1h'] ?? 3600));
 
     try {
         $pdo->beginTransaction();
@@ -58,12 +44,9 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->commit();
 
         echo json_encode([
-            'status'     => 'success',
-            'url'        => "https://itylos.com/v/" . $secret_id,
-            'proof_url'  => "https://itylos.com/" . $lang . "/proof?t=" . $m_token
+            'status' => 'success',
+            'url' => "https://itylos.com/v/" . $secret_id,
+            'proof_url' => "https://itylos.com/" . $lang . "/proof?t=" . $m_token
         ]);
-    } catch (Exception $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
-        exit(json_encode(['status' => 'error']));
-    }
+    } catch (Exception $e) { if ($pdo->inTransaction()) $pdo->rollBack(); exit(json_encode(['status' => 'error'])); }
 }
