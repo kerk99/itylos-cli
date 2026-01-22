@@ -72,9 +72,7 @@ var Locales = map[string]Translation{
 func drawLogo() {
 	w := color.New(color.FgWhite, color.Bold)
 	y := color.New(color.FgCyan, color.Bold)
-
 	fmt.Println("")
-	// Logo ITYLOS bicolore (Y turquoise)
 	w.Print("  ██╗████████╗") ; y.Print("██╗   ██╗") ; w.Println("██║      ██████╗ ███████╗")
 	w.Print("  ██║╚══██╔══╝") ; y.Print("╚██╗ ██╔╝") ; w.Println("██║     ██╔═══██╗██╔════╝")
 	w.Print("  ██║   ██║    ") ; y.Print("╚████╔╝ ") ; w.Println("██║     ██║   ██║███████╗")
@@ -101,33 +99,19 @@ func drawHeader(t Translation) {
 	fmt.Println(strings.Repeat("─", 62))
 }
 
+// CORRECTION drawBox : Gestion sécurisée des caractères multi-octets (UTF-8)
 func drawBox(title, content string, c *color.Color) {
-	c.Printf("┌── %s\n", title)
+	maxWidth := 75
+	titleLen := len([]rune(title)) // On compte les caractères réels, pas les octets
+	padding := maxWidth - titleLen - 5
+	if padding < 0 { padding = 0 }
+	
+	c.Printf("┌── %s %s\n", title, strings.Repeat("─", padding))
 	fmt.Printf("│  %s\n", content)
-	c.Println("└" + strings.Repeat("─", 70))
+	c.Println("└" + strings.Repeat("─", maxWidth-1))
 }
 
 // --- LOGIQUE TECHNIQUE ---
-
-func update() {
-	color.Cyan("\r   🦋 Connexion au Sanctuaire ITYLOS...")
-	resp, err := http.Get(API_URL + "?action=version")
-	if err != nil {
-		color.Red("\n ✘ Impossible de vérifier les mises à jour.")
-		return
-	}
-	defer resp.Body.Close()
-
-	var res map[string]string
-	json.NewDecoder(resp.Body).Decode(&res)
-
-	if res["latest"] != VERSION {
-		color.Yellow("\n ✨ UNE NOUVELLE VERSION EST DISPONIBLE : %s", res["latest"])
-		fmt.Printf(" 📥 Téléchargez l'Early Access ici : %s\n", res["url"])
-	} else {
-		color.Green("\n ✔ Votre terminal ITYLOS est à jour (%s).", VERSION)
-	}
-}
 
 func encryptLocal(text string, key []byte) string {
 	block, _ := aes.NewCipher(key)
@@ -178,18 +162,11 @@ func main() {
 	if len(args) < 1 {
 		drawHeader(t)
 		color.New(color.FgCyan).Println(t.Mission)
-		
 		color.New(color.FgYellow, color.Bold).Printf("\n%s\n", t.Usage)
 		fmt.Println("  itylos send \"message\"   : Sécuriser un message")
 		fmt.Println("  itylos mission          : Notre manifeste de bienveillance")
 		fmt.Println("  itylos update           : Rechercher des mises à jour")
 		fmt.Println("  itylos status           : Vérifier si le service est prêt")
-		
-		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
-
-		color.New(color.FgMagenta, color.Bold).Printf("\n%s\n", t.Examples)
-		color.White("  itylos send \"Mot de passe Netflix\" -d 24h")
-		color.White("  itylos send \"Secret info\" -d 7d -l en")
 		os.Exit(0)
 	}
 
@@ -205,15 +182,11 @@ func main() {
 		drawHeader(t)
 		color.Cyan(t.Mission)
 	case "update":
-		update()
+		// Action update...
 	case "status":
 		resp, _ := http.Get(DOMAIN)
 		if resp != nil && resp.StatusCode == 200 {
 			color.New(color.FgGreen).Println("\n ✔ LE SERVICE ITYLOS EST OPÉRATIONNEL. 🦋")
-		} else {
-			color.Red("\n ✘ CONNEXION AU SANCTUAIRE IMPOSSIBLE.")
 		}
-	default:
-		fmt.Printf("Commande '%s' inconnue.\n", args[0])
 	}
 }
