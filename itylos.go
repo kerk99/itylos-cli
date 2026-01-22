@@ -168,7 +168,7 @@ func main() {
 		drawHeader(t)
 		color.New(color.FgCyan).Println(t.Mission)
 		
-		// PLACEMENT CRITIQUE : OPTIONS JUSTE APRÈS LE MANIFESTE
+		// PLACEMENT DES OPTIONS
 		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
 
 		color.New(color.FgYellow, color.Bold).Printf("\n%s\n", t.Usage)
@@ -194,13 +194,11 @@ func main() {
 	case "send":
 		if len(args) > 1 { drawHeader(t); send(args[1], *durPtr, lang) }
 	case "mission":
-		drawHeader(t)
-		color.Cyan(t.Mission)
-		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options) // Options aussi ici pour la clarté
+		drawHeader(t); color.Cyan(t.Mission)
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
 	case "faq":
-		drawHeader(t)
-		color.Cyan(t.Faq)
-		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options) // Options aussi ici
+		drawHeader(t); color.Cyan(t.Faq)
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
 	case "update":
 		update()
 	case "status":
