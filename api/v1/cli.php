@@ -23,7 +23,6 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $payload = $data['content'] ?? '';
     if (empty($payload)) { exit(json_encode(['status' => 'error'])); }
 
-    // Double-Shield Protocol
     $method = 'aes-256-gcm';
     $iv_len = openssl_cipher_iv_length($method);
     $iv = openssl_random_pseudo_bytes($iv_len);
@@ -31,7 +30,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $encrypted = openssl_encrypt($payload, $method, ENCRYPTION_KEY, OPENSSL_RAW_DATA, $iv, $tag, "", 16);
     $final_blob = base64_encode($iv . $tag . $encrypted);
 
-    // Identifiant aléatoire pur (ex: itylos.com/v/311ac889)
+    // IDENTIFIANT ALÉATOIRE DISCRET
     $secret_id = bin2hex(random_bytes(6)); 
     $m_token = bin2hex(random_bytes(32)); 
     $durations = ['1h' => 3600, '24h' => 86400, '7d' => 604800];
