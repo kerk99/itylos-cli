@@ -103,7 +103,7 @@ func drawHeader(t Translation) {
 
 func drawBox(title, content string, c *color.Color) {
 	maxWidth := 78
-	tLen := len([]rune(title)) 
+	tLen := len([]rune(title)) // Calcul par runes pour éviter le crash UTF-8
 	repeatCount := maxWidth - tLen - 5
 	if repeatCount < 0 { repeatCount = 0 }
 	c.Printf("┌── %s %s\n", title, strings.Repeat("─", repeatCount))
@@ -125,7 +125,7 @@ func update() {
 	json.NewDecoder(resp.Body).Decode(&res)
 	if res["latest"] != VERSION {
 		color.Yellow("\n ✨ NOUVELLE VERSION DISPONIBLE : %s", res["latest"])
-		fmt.Printf(" 📥 Téléchargez l'outil ici : %s\n", res["url"])
+		fmt.Printf(" 📥 Téléchargez la mise à jour : %s\n", res["url"])
 	} else {
 		color.Green("\n ✔ Votre terminal ITYLOS est à jour (%s).", VERSION)
 	}
@@ -163,42 +163,40 @@ func main() {
 	t := Locales[lang]
 	args := flag.Args()
 
-	// --- INTERFACE 1 : ACCUEIL ---
+	// --- INTERFACE 1 : ACCUEIL (ITYLOS SEUL) ---
 	if len(args) < 1 {
 		drawHeader(t)
 		color.New(color.FgCyan).Println(t.Mission)
 		
-		// PLACEMENT DES OPTIONS
+		// PLACEMENT CRITIQUE : OPTIONS JUSTE APRÈS LE MANIFESTE
 		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
 
 		color.New(color.FgYellow, color.Bold).Printf("\n%s\n", t.Usage)
 		fmt.Println("  itylos send \"message\"   : Sécuriser un message")
-		fmt.Println("  itylos mission          : Notre manifeste de bienveillance")
+		fmt.Println("  itylos mission          : Manifeste de bienveillance")
 		fmt.Println("  itylos faq              : Questions fréquentes")
 		fmt.Println("  itylos update           : Rechercher des mises à jour")
-		fmt.Println("  itylos status           : Vérifier si le service est prêt")
+		fmt.Println("  itylos status           : État du service")
 		
 		color.New(color.FgMagenta, color.Bold).Printf("\n%s\n", t.Examples)
 		if lang == "fr" {
 			color.White("  itylos send \"Voici le code d'accès : 5678\" -d 1h")
-			color.White("  itylos send \"Document confidentiel\" -d 24h")
+			color.White("  itylos send \"Secret info\" -d 24h")
 		} else {
 			color.White("  itylos send \"Here is the access code: 5678\" -d 1h")
 		}
 		os.Exit(0)
 	}
 
-	// --- INTERFACE 2 : COMMANDES ---
+	// --- INTERFACE 2 : COMMANDES SPÉCIFIQUES ---
 	switch args[0] {
 	case "send":
 		if len(args) > 1 { drawHeader(t); send(args[1], *durPtr, lang) }
 	case "mission":
-		drawHeader(t)
-		color.Cyan(t.Mission)
-		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
+		drawHeader(t); color.Cyan(t.Mission)
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options) // Options aussi ici pour la clarté
 	case "faq":
-		drawHeader(t)
-		color.Cyan(t.Faq)
+		drawHeader(t); color.Cyan(t.Faq)
 		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
 	case "update":
 		update()
