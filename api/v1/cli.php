@@ -30,7 +30,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $encrypted = openssl_encrypt($payload, $method, ENCRYPTION_KEY, OPENSSL_RAW_DATA, $iv, $tag, "", 16);
     $final_blob = base64_encode($iv . $tag . $encrypted);
 
-    // IDENTIFIANT ALÉATOIRE DISCRET
+    // IDENTIFIANT DISCRET : On supprime le texte Early Access
     $secret_id = bin2hex(random_bytes(6)); 
     $m_token = bin2hex(random_bytes(32)); 
     $durations = ['1h' => 3600, '24h' => 86400, '7d' => 604800];
