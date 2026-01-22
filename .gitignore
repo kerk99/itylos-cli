@@ -30,3 +30,25 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+# --- ITYLOS : CONFIGURATION SÉCURISÉE ---
+
+# 🔐 SÉCURITÉ : Ne jamais envoyer les accès serveurs
+# On ignore les fichiers de config qui contiennent tes mots de passe DB
+inc/config.php
+api/v1/config.php
+.env
+
+# 🚀 BINAIRES : Ne pas envoyer les fichiers compilés
+# On ignore l'exécutable Windows que tu as créé
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 📂 DOSSIERS SYSTÈME & ÉDITEURS
+.idea/
+.vscode/
+*.swp
+*.bak
+node_modules/
