@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/fatih/color"
 )
@@ -195,9 +194,13 @@ func main() {
 	case "send":
 		if len(args) > 1 { drawHeader(t); send(args[1], *durPtr, lang) }
 	case "mission":
-		drawHeader(t); color.Cyan(t.Mission)
+		drawHeader(t)
+		color.Cyan(t.Mission)
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options) // Options aussi ici pour la clarté
 	case "faq":
-		drawHeader(t); color.Cyan(t.Faq)
+		drawHeader(t)
+		color.Cyan(t.Faq)
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options) // Options aussi ici
 	case "update":
 		update()
 	case "status":
