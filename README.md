@@ -55,6 +55,15 @@ The internet forgets nothing — humans should be allowed to.
 
 ---
 
+
+## 🚀 Installation Rapide / Direct Installation
+
+Si **Go** est installé sur votre machine, vous pouvez installer ITYLOS directement via GitHub :
+
+```bash
+go install [github.com/kerk99/itylos-cli@latest](https://github.com/kerk99/itylos-cli@latest)
+```
+Configuration par OS :
 ## 🚀 Installation
 
 ### Windows (PowerShell)
@@ -62,6 +71,13 @@ The internet forgets nothing — humans should be allowed to.
 ```powershell
 Set-Alias itylos "C:\path\to\itylos.exe"
 ```
+
+🍎 macOS & 🐧 Linux
+```
+# Ajouter à votre PATH ou créer un alias
+sudo mv ~/go/bin/itylos /usr/local/bin/itylos
+```
+
 
 ---
 
