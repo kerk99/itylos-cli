@@ -163,7 +163,7 @@ func main() {
 	t := Locales[lang]
 	args := flag.Args()
 
-	// --- INTERFACE 1 : TYPER JUSTE 'ITYLOS' (ACCUEIL) ---
+	// --- INTERFACE 1 : ACCUEIL ---
 	if len(args) < 1 {
 		drawHeader(t)
 		color.New(color.FgCyan).Println(t.Mission)
@@ -189,15 +189,17 @@ func main() {
 		os.Exit(0)
 	}
 
-	// --- INTERFACE 2 : COMMANDES SPÉCIFIQUES ---
+	// --- INTERFACE 2 : COMMANDES ---
 	switch args[0] {
 	case "send":
 		if len(args) > 1 { drawHeader(t); send(args[1], *durPtr, lang) }
 	case "mission":
-		drawHeader(t); color.Cyan(t.Mission)
-		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
+		drawHeader(t)
+		color.Cyan(t.Mission)
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options) // Options aussi ici
 	case "faq":
-		drawHeader(t); color.Cyan(t.Faq)
+		drawHeader(t)
+		color.Cyan(t.Faq)
 		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
 	case "update":
 		update()
