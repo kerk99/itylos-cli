@@ -25,9 +25,9 @@ const (
 	VERSION = "v1.0.1-beta"
 )
 
-// --- SYSTÈME DE TRADUCTION & MANIFESTE ---
+// --- SYSTÈME DE TRADUCTION INTÉGRAL ---
 type Translation struct {
-	Title, Mission, Intro, Usage, Options, Examples, Success, Share, Proof, Note, Err string
+	Title, Mission, Intro, Usage, Options, Examples, Success, Share, Proof, Note, Err, Faq string
 }
 
 var Locales = map[string]Translation{
@@ -38,10 +38,17 @@ var Locales = map[string]Translation{
 			"2. RESPECTER : Vos secrets ne nous regardent pas. Ils sont chiffrés chez vous.\n" +
 			"3. ÉDUQUER : Protégez votre vie privée et celle de vos proches.\n" +
 			"4. RESPONSABILISER : Un message envoyé est un acte de confiance, pas une trace.",
+		Faq: "QUESTIONS FRÉQUEMMENT POSÉES :\n" +
+			"Q: Où est stockée la clé ?\n" +
+			"R: Uniquement dans l'URL (#) sur votre terminal. Elle ne traverse jamais le réseau.\n\n" +
+			"Q: Pourquoi l'auto-destruction ?\n" +
+			"R: Pour garantir qu'une fuite de données future ne compromette pas vos secrets passés.\n\n" +
+			"Q: Qui a créé ITYLOS ?\n" +
+			"R: Une initiative pour une tech plus humaine et souveraine.",
 		Intro:   "Souveraineté activée. Votre message est crypté et protégé.",
 		Usage:   "COMMANDES DISPONIBLES :",
 		Options: "DURÉES AVANT EFFACEMENT : 1h (par défaut), 24h, 7j (7 jours)",
-		Examples: "EXEMPLES PRATIQUES :",
+		Examples: "EXEMPLES BIENVEILLANTS :",
 		Success: "🦋 MESSAGE ENVOYÉ : IL EST MAINTENANT SÉCURISÉ",
 		Share:   "LIEN À ENVOYER (S'effacera tout seul après lecture)",
 		Proof:   "PREUVE D'EFFACEMENT (Pour vérifier que tout a été supprimé)",
@@ -55,10 +62,17 @@ var Locales = map[string]Translation{
 			"2. RESPECT: Your secrets are none of our business. They are encrypted locally.\n" +
 			"3. EDUCATE: Protect your privacy and that of your loved ones.\n" +
 			"4. EMPOWER: A sent message is an act of trust, not a permanent trace.",
+		Faq: "FREQUENTLY ASKED QUESTIONS:\n" +
+			"Q: Where is the key stored?\n" +
+			"R: Only in the URL (#) on your terminal. It never crosses the network.\n\n" +
+			"Q: Why self-destruction?\n" +
+			"R: To ensure that a future data breach doesn't compromise your past secrets.\n\n" +
+			"Q: Who built ITYLOS?\n" +
+			"R: An initiative for a more human and sovereign tech.",
 		Intro:   "Sovereignty active. Your message is encrypted and protected.",
 		Usage:   "AVAILABLE COMMANDS:",
 		Options: "DURATIONS BEFORE DELETION: 1h (default), 24h, 7d (7 days)",
-		Examples: "PRACTICAL EXAMPLES:",
+		Examples: "BENEVOLENT EXAMPLES:",
 		Success: "🦋 MESSAGE SENT: IT IS NOW SECURE",
 		Share:   "LINK TO SEND (Will self-destruct after reading)",
 		Proof:   "DELETION PROOF (To check that everything is deleted)",
@@ -70,8 +84,7 @@ var Locales = map[string]Translation{
 // --- INTERFACE VISUELLE ---
 
 func drawLogo() {
-	w := color.New(color.FgWhite, color.Bold)
-	y := color.New(color.FgCyan, color.Bold)
+	w := color.New(color.FgWhite, color.Bold); y := color.New(color.FgCyan, color.Bold)
 	fmt.Println("")
 	w.Print("  ██╗████████╗") ; y.Print("██╗   ██╗") ; w.Println("██║      ██████╗ ███████╗")
 	w.Print("  ██║╚══██╔══╝") ; y.Print("╚██╗ ██╔╝") ; w.Println("██║     ██╔═══██╗██╔════╝")
@@ -79,16 +92,6 @@ func drawLogo() {
 	w.Print("  ██║   ██║     ") ; y.Print("╚██╔╝  ") ; w.Println("██║     ██║   ██║╚════██║")
 	w.Print("  ██║   ██║      ") ; y.Print("██║   ") ; w.Println("███████╗╚██████╔╝███████║")
 	w.Print("  ╚═╝   ╚═╝      ") ; y.Print("╚═╝   ") ; w.Println("╚══════╝ ╚═════╝ ╚══════╝")
-}
-
-func animateProcess() {
-	frames := []string{"  ʚïɞ  ", "  ʚ-ɞ  ", "  ʚ.ɞ  ", "  ʚ-ɞ  "}
-	c := color.New(color.FgCyan, color.Bold)
-	for i := 0; i < 15; i++ {
-		c.Printf("\r   %s  SÉCURISATION DU MESSAGE EN COURS... ", frames[i%len(frames)])
-		time.Sleep(80 * time.Millisecond)
-	}
-	fmt.Println("\r                                                      ")
 }
 
 func drawHeader(t Translation) {
@@ -100,12 +103,11 @@ func drawHeader(t Translation) {
 }
 
 func drawBox(title, content string, c *color.Color) {
-	maxWidth := 75
-	tLen := len([]rune(title)) 
-	padding := maxWidth - tLen - 5
-	if padding < 0 { padding = 0 }
-
-	c.Printf("┌── %s %s\n", title, strings.Repeat("─", padding))
+	maxWidth := 78
+	tLen := len([]rune(title)) // Calcul sécurisé pour UTF-8/Accents
+	repeatCount := maxWidth - tLen - 5
+	if repeatCount < 0 { repeatCount = 0 }
+	c.Printf("┌── %s %s\n", title, strings.Repeat("─", repeatCount))
 	fmt.Printf("│  %s\n", content)
 	c.Println("└" + strings.Repeat("─", maxWidth-1))
 }
@@ -122,16 +124,14 @@ func encryptLocal(text string, key []byte) string {
 func send(msg, duration, lang string) {
 	t := Locales[lang]
 	if msg == "" { color.Red(t.Err); return }
-	animateProcess()
-
+	
 	k := make([]byte, 32); io.ReadFull(rand.Reader, k)
 	keyFrag := base64.RawURLEncoding.EncodeToString(k)
-
 	payload := encryptLocal(msg, k)
 	data, _ := json.Marshal(map[string]string{"content": payload, "duration": duration})
 	
 	resp, err := http.Post(API_URL+"?action=save&l="+lang, "application/json", bytes.NewBuffer(data))
-	if err != nil { color.Red("✘ Service momentanément indisponible."); return }
+	if err != nil { color.Red("✘ Service indisponible."); return }
 	defer resp.Body.Close()
 
 	var res map[string]string
@@ -153,36 +153,36 @@ func main() {
 	if len(args) < 1 {
 		drawHeader(t)
 		color.New(color.FgCyan).Println(t.Mission)
-		
 		color.New(color.FgYellow, color.Bold).Printf("\n%s\n", t.Usage)
 		fmt.Println("  itylos send \"message\"   : Sécuriser un message")
-		fmt.Println("  itylos mission          : Notre manifeste de bienveillance")
-		fmt.Println("  itylos status           : Vérifier si le service est prêt")
+		fmt.Println("  itylos mission          : Manifeste de bienveillance")
+		fmt.Println("  itylos faq              : Questions fréquentes")
+		fmt.Println("  itylos status           : État du service")
 		
-		// RETOUR DE LA LIGNE DES DURÉES
-		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options) // Rétabli
 
 		color.New(color.FgMagenta, color.Bold).Printf("\n%s\n", t.Examples)
-		color.White("  itylos send \"Mot de passe Netflix\" -d 24h")
-		color.White("  itylos send \"Secret info\" -d 7d -l en")
+		if lang == "fr" {
+			color.White("  itylos send \"Voici le code d'accès : 5678\" -d 24h")
+		} else {
+			color.White("  itylos send \"Here is the access code: 5678\" -d 24h")
+		}
 		os.Exit(0)
 	}
 
 	switch args[0] {
 	case "send":
-		if len(args) > 1 {
-			drawHeader(t)
-			send(args[1], *durPtr, lang)
-		} else {
-			fmt.Println("Usage: itylos send \"votre message\"")
-		}
+		if len(args) > 1 { drawHeader(t); send(args[1], *durPtr, lang) }
 	case "mission":
 		drawHeader(t)
 		color.Cyan(t.Mission)
+	case "faq":
+		drawHeader(t)
+		color.Cyan(t.Faq)
 	case "status":
 		resp, _ := http.Get(DOMAIN)
-		if resp != nil && resp.StatusCode == 200 {
-			color.New(color.FgGreen).Println("\n ✔ LE SERVICE ITYLOS EST OPÉRATIONNEL. 🦋")
+		if resp != nil && resp.StatusCode == 200 { 
+			color.Green("\n ✔ SERVICE OPÉRATIONNEL. 🦋") 
 		}
 	}
 }
