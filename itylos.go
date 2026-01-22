@@ -102,15 +102,34 @@ func drawHeader(t Translation) {
 	fmt.Println(strings.Repeat("─", 62))
 }
 
-// drawBox CORRIGÉ : Empêche le crash avec les accents UTF-8
 func drawBox(title, content string, c *color.Color) {
 	maxWidth := 78
-	tLen := len([]rune(title)) 
+	tLen := len([]rune(title)) // Calcul sécurisé UTF-8
 	repeatCount := maxWidth - tLen - 5
 	if repeatCount < 0 { repeatCount = 0 }
 	c.Printf("┌── %s %s\n", title, strings.Repeat("─", repeatCount))
 	fmt.Printf("│  %s\n", content)
 	c.Println("└" + strings.Repeat("─", maxWidth-1))
+}
+
+// --- LOGIQUE TECHNIQUE ---
+
+func update() {
+	color.Cyan("\r   🦋 Connexion au Sanctuaire ITYLOS...")
+	resp, err := http.Get(API_URL + "?action=version")
+	if err != nil {
+		color.Red("\n ✘ Impossible de vérifier les mises à jour.")
+		return
+	}
+	defer resp.Body.Close()
+	var res map[string]string
+	json.NewDecoder(resp.Body).Decode(&res)
+	if res["latest"] != VERSION {
+		color.Yellow("\n ✨ NOUVELLE VERSION DISPONIBLE : %s", res["latest"])
+		fmt.Printf(" 📥 Téléchargez l'Early Access ici : %s\n", res["url"])
+	} else {
+		color.Green("\n ✔ Votre terminal ITYLOS est à jour (%s).", VERSION)
+	}
 }
 
 func encryptLocal(text string, key []byte) string {
@@ -123,38 +142,19 @@ func encryptLocal(text string, key []byte) string {
 func send(msg, duration, lang string) {
 	t := Locales[lang]
 	if msg == "" { color.Red(t.Err); return }
-	
 	k := make([]byte, 32); io.ReadFull(rand.Reader, k)
 	keyFrag := base64.RawURLEncoding.EncodeToString(k)
 	payload := encryptLocal(msg, k)
 	data, _ := json.Marshal(map[string]string{"content": payload, "duration": duration})
-	
 	resp, err := http.Post(API_URL+"?action=save&l="+lang, "application/json", bytes.NewBuffer(data))
 	if err != nil { color.Red("✘ Service indisponible."); return }
 	defer resp.Body.Close()
-
 	var res map[string]string
 	json.NewDecoder(resp.Body).Decode(&res)
-
 	color.New(color.FgGreen, color.Bold).Println("\n" + t.Success)
 	drawBox(t.Share, res["url"]+"#"+keyFrag, color.New(color.FgCyan, color.Bold))
 	drawBox(t.Proof, res["proof_url"], color.New(color.FgYellow, color.Bold))
 	color.New(color.FgHiBlack, color.Italic).Println("\n " + t.Note + "\n")
-}
-
-func update() {
-	color.Cyan("\r   🦋 Connexion au Sanctuaire ITYLOS...")
-	resp, err := http.Get(API_URL + "?action=version")
-	if err != nil { color.Red("\n ✘ Impossible de vérifier les mises à jour."); return }
-	defer resp.Body.Close()
-	var res map[string]string
-	json.NewDecoder(resp.Body).Decode(&res)
-	if res["latest"] != VERSION {
-		color.Yellow("\n ✨ NOUVELLE VERSION DISPONIBLE : %s", res["latest"])
-		fmt.Printf(" 📥 Téléchargez l'Early Access ici : %s\n", res["url"])
-	} else {
-		color.Green("\n ✔ Terminal à jour (%s).", VERSION)
-	}
 }
 
 func main() {
@@ -164,11 +164,12 @@ func main() {
 	t := Locales[lang]
 	args := flag.Args()
 
+	// --- INTERFACE 1 : TYPER JUSTE 'ITYLOS' (ACCUEIL) ---
 	if len(args) < 1 {
 		drawHeader(t)
 		color.New(color.FgCyan).Println(t.Mission)
 		
-		// LIGNE DES OPTIONS RÉTABLIE
+		// PLACEMENT CRITIQUE : OPTIONS JUSTE APRÈS LE MANIFESTE
 		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
 
 		color.New(color.FgYellow, color.Bold).Printf("\n%s\n", t.Usage)
@@ -189,19 +190,20 @@ func main() {
 		os.Exit(0)
 	}
 
+	// --- INTERFACE 2 : COMMANDES SPÉCIFIQUES ---
 	switch args[0] {
 	case "send":
 		if len(args) > 1 { drawHeader(t); send(args[1], *durPtr, lang) }
 	case "mission":
-		drawHeader(t)
-		color.Cyan(t.Mission)
+		drawHeader(t); color.Cyan(t.Mission)
 	case "faq":
-		drawHeader(t)
-		color.Cyan(t.Faq)
+		drawHeader(t); color.Cyan(t.Faq)
 	case "update":
 		update()
 	case "status":
 		resp, _ := http.Get(DOMAIN)
-		if resp != nil && resp.StatusCode == 200 { color.Green("\n ✔ SERVICE OPÉRATIONNEL. 🦋") }
+		if resp != nil && resp.StatusCode == 200 { 
+			color.Green("\n ✔ SERVICE ITYLOS OPÉRATIONNEL. 🦋") 
+		}
 	}
 }
