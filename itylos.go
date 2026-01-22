@@ -18,12 +18,14 @@ import (
 	"github.com/fatih/color"
 )
 
+// --- CONFIGURATION GLOBALE ---
 const (
 	DOMAIN  = "https://itylos.com"
 	API_URL = DOMAIN + "/api/v1/cli.php"
 	VERSION = "v1.0.1-beta"
 )
 
+// --- SYSTÈME DE TRADUCTION & MANIFESTE ---
 type Translation struct {
 	Title, Mission, Intro, Usage, Options, Examples, Success, Share, Proof, Note, Err string
 }
@@ -65,6 +67,8 @@ var Locales = map[string]Translation{
 	},
 }
 
+// --- INTERFACE VISUELLE ---
+
 func drawLogo() {
 	w := color.New(color.FgWhite, color.Bold); y := color.New(color.FgCyan, color.Bold)
 	fmt.Println("")
@@ -94,14 +98,14 @@ func drawHeader(t Translation) {
 	fmt.Println(strings.Repeat("─", 62))
 }
 
-// drawBox SÉCURISÉ : Ne plante plus avec des titres longs ou des accents
+// drawBox SÉCURISÉ : Ne plante plus avec des caractères UTF-8
 func drawBox(title, content string, c *color.Color) {
-	maxWidth := 78
-	tLen := len([]rune(title)) 
-	repeatCount := maxWidth - tLen - 5
-	if repeatCount < 0 { repeatCount = 0 }
+	maxWidth := 75
+	tLen := len([]rune(title)) // On compte les caractères réels, pas les octets
+	padding := maxWidth - tLen - 5
+	if padding < 0 { padding = 0 } // Sécurité anti-crash
 
-	c.Printf("┌── %s %s\n", title, strings.Repeat("─", repeatCount))
+	c.Printf("┌── %s %s\n", title, strings.Repeat("─", padding))
 	fmt.Printf("│  %s\n", content)
 	c.Println("└" + strings.Repeat("─", maxWidth-1))
 }
@@ -122,7 +126,7 @@ func send(msg, duration, lang string) {
 	payload := encryptLocal(msg, k)
 	data, _ := json.Marshal(map[string]string{"content": payload, "duration": duration})
 	resp, err := http.Post(API_URL+"?action=save&l="+lang, "application/json", bytes.NewBuffer(data))
-	if err != nil { color.Red("✘ Service indisponible."); return }
+	if err != nil { color.Red("✘ Service momentanément indisponible."); return }
 	defer resp.Body.Close()
 	var res map[string]string
 	json.NewDecoder(resp.Body).Decode(&res)
@@ -144,7 +148,15 @@ func main() {
 		color.New(color.FgYellow, color.Bold).Printf("\n%s\n", t.Usage)
 		fmt.Println("  itylos send \"message\"   : Sécuriser un message")
 		fmt.Println("  itylos mission          : Notre manifeste de bienveillance")
+		fmt.Println("  itylos update           : Rechercher des mises à jour")
 		fmt.Println("  itylos status           : Vérifier si le service est prêt")
+		
+		// RÉTABLISSEMENT DE LA LIGNE DES DURÉES
+		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
+
+		color.New(color.FgMagenta, color.Bold).Printf("\n%s\n", t.Examples)
+		color.White("  itylos send \"Mot de passe Netflix\" -d 24h")
+		color.White("  itylos send \"Secret info\" -d 7d -l en")
 		os.Exit(0)
 	}
 	switch args[0] {
