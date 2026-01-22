@@ -70,7 +70,8 @@ var Locales = map[string]Translation{
 // --- INTERFACE VISUELLE ---
 
 func drawLogo() {
-	w := color.New(color.FgWhite, color.Bold); y := color.New(color.FgCyan, color.Bold)
+	w := color.New(color.FgWhite, color.Bold)
+	y := color.New(color.FgCyan, color.Bold)
 	fmt.Println("")
 	w.Print("  ██╗████████╗") ; y.Print("██╗   ██╗") ; w.Println("██║      ██████╗ ███████╗")
 	w.Print("  ██║╚══██╔══╝") ; y.Print("╚██╗ ██╔╝") ; w.Println("██║     ██╔═══██╗██╔════╝")
@@ -98,17 +99,18 @@ func drawHeader(t Translation) {
 	fmt.Println(strings.Repeat("─", 62))
 }
 
-// drawBox SÉCURISÉ : Ne plante plus avec des caractères UTF-8
 func drawBox(title, content string, c *color.Color) {
 	maxWidth := 75
-	tLen := len([]rune(title)) // On compte les caractères réels, pas les octets
+	tLen := len([]rune(title)) 
 	padding := maxWidth - tLen - 5
-	if padding < 0 { padding = 0 } // Sécurité anti-crash
+	if padding < 0 { padding = 0 }
 
 	c.Printf("┌── %s %s\n", title, strings.Repeat("─", padding))
 	fmt.Printf("│  %s\n", content)
 	c.Println("└" + strings.Repeat("─", maxWidth-1))
 }
+
+// --- LOGIQUE TECHNIQUE ---
 
 func encryptLocal(text string, key []byte) string {
 	block, _ := aes.NewCipher(key); gcm, _ := cipher.NewGCM(block)
@@ -121,15 +123,20 @@ func send(msg, duration, lang string) {
 	t := Locales[lang]
 	if msg == "" { color.Red(t.Err); return }
 	animateProcess()
+
 	k := make([]byte, 32); io.ReadFull(rand.Reader, k)
 	keyFrag := base64.RawURLEncoding.EncodeToString(k)
+
 	payload := encryptLocal(msg, k)
 	data, _ := json.Marshal(map[string]string{"content": payload, "duration": duration})
+	
 	resp, err := http.Post(API_URL+"?action=save&l="+lang, "application/json", bytes.NewBuffer(data))
 	if err != nil { color.Red("✘ Service momentanément indisponible."); return }
 	defer resp.Body.Close()
+
 	var res map[string]string
 	json.NewDecoder(resp.Body).Decode(&res)
+
 	color.New(color.FgGreen, color.Bold).Println("\n" + t.Success)
 	drawBox(t.Share, res["url"]+"#"+keyFrag, color.New(color.FgCyan, color.Bold))
 	drawBox(t.Proof, res["proof_url"], color.New(color.FgYellow, color.Bold))
@@ -142,16 +149,17 @@ func main() {
 	if _, ok := Locales[lang]; !ok { lang = "fr" }
 	t := Locales[lang]
 	args := flag.Args()
+
 	if len(args) < 1 {
 		drawHeader(t)
 		color.New(color.FgCyan).Println(t.Mission)
+		
 		color.New(color.FgYellow, color.Bold).Printf("\n%s\n", t.Usage)
 		fmt.Println("  itylos send \"message\"   : Sécuriser un message")
 		fmt.Println("  itylos mission          : Notre manifeste de bienveillance")
-		fmt.Println("  itylos update           : Rechercher des mises à jour")
 		fmt.Println("  itylos status           : Vérifier si le service est prêt")
 		
-		// RÉTABLISSEMENT DE LA LIGNE DES DURÉES
+		// RETOUR DE LA LIGNE DES DURÉES
 		color.New(color.FgHiBlack).Printf("\n%s\n", t.Options)
 
 		color.New(color.FgMagenta, color.Bold).Printf("\n%s\n", t.Examples)
@@ -159,14 +167,22 @@ func main() {
 		color.White("  itylos send \"Secret info\" -d 7d -l en")
 		os.Exit(0)
 	}
+
 	switch args[0] {
 	case "send":
-		if len(args) > 1 { drawHeader(t); send(args[1], *durPtr, lang) }
+		if len(args) > 1 {
+			drawHeader(t)
+			send(args[1], *durPtr, lang)
+		} else {
+			fmt.Println("Usage: itylos send \"votre message\"")
+		}
 	case "mission":
 		drawHeader(t)
 		color.Cyan(t.Mission)
 	case "status":
 		resp, _ := http.Get(DOMAIN)
-		if resp != nil && resp.StatusCode == 200 { color.Green("\n ✔ SERVICE OPÉRATIONNEL. 🦋") }
+		if resp != nil && resp.StatusCode == 200 {
+			color.New(color.FgGreen).Println("\n ✔ LE SERVICE ITYLOS EST OPÉRATIONNEL. 🦋")
+		}
 	}
 }
