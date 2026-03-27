@@ -1,64 +1,20 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, built with `go test -c`
-*.test
-
-# Code coverage profiles and other test artifacts
-*.out
-coverage.*
-*.coverprofile
-profile.cov
-
-# Dependency directories (remove the comment below to include it)
-# vendor/
-
-# Go workspace file
-go.work
-go.work.sum
-
-# env file
 .env
-
-# Editor/IDE
-# .idea/
-# .vscode/
-# --- ITYLOS : CONFIGURATION SÉCURISÉE ---
-
-# 🔐 SÉCURITÉ : Ne jamais envoyer les accès serveurs
-# On ignore les fichiers de config qui contiennent tes mots de passe DB
-inc/config.php
-api/v1/config.php
-.env
-
-# 🚀 BINAIRES : Ne pas envoyer les fichiers compilés
-# On ignore l'exécutable Windows que tu as créé
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# 📂 DOSSIERS SYSTÈME & ÉDITEURS
 .idea/
 .vscode/
-*.swp
 *.bak
-node_modules/
-
-# Rust
+*.dll
+*.dylib
+*.exe
+*.exe~
+*.out
+*.so
+*.swp
 /target/
 Cargo.lock.bak
-
-# Local integration artifacts
+coverage.*
+integration-attachment.txt
+node_modules/
 proof-api-response.json
 proof-cli-format.json
-integration-attachment.txt
+profile.cov
 tmp-read/

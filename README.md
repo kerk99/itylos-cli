@@ -21,9 +21,6 @@ Rust CLI for sovereign ephemeral messaging with local AES-256-GCM encryption, ze
 - [`src/types.rs`](src/types.rs): shared request/response types and constants
 - [`src/mcp/mod.rs`](src/mcp/mod.rs): MCP stdio server
 
-Reference architecture used for repo cleanliness and release discipline:
-- local clone: `C:\Users\Kerki\Desktop\itylos-cli-v2\ai-rsk-reference`
-
 ## Install
 
 ### From source
@@ -143,5 +140,4 @@ Release assets on version tags:
 
 ## Notes
 
-- Legacy Go and PHP files are still present for migration reference.
-- The Rust binary target is now `itylos`.
+- The Rust binary target is `itylos`.
