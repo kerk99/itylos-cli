@@ -352,7 +352,7 @@ mod tests {
     #[test]
     fn parse_secret_url_accepts_valid_link() {
         let (secret_id, key) =
-            parse_secret_url("https://almowatin.org/v/0123456789abcdef0123456789abcdef#secretkey")
+            parse_secret_url("https://itylos.com/v/0123456789abcdef0123456789abcdef#secretkey")
                 .expect("url should parse");
         assert_eq!(secret_id, "0123456789abcdef0123456789abcdef");
         assert_eq!(key, "secretkey");
@@ -360,13 +360,12 @@ mod tests {
 
     #[test]
     fn parse_secret_url_rejects_missing_key_and_bad_id() {
-        let missing_key =
-            parse_secret_url("https://almowatin.org/v/0123456789abcdef0123456789abcdef")
-                .expect_err("missing key should fail");
+        let missing_key = parse_secret_url("https://itylos.com/v/0123456789abcdef0123456789abcdef")
+            .expect_err("missing key should fail");
         assert!(missing_key.to_string().contains("cle (#...) est manquante"));
 
-        let bad_id = parse_secret_url("https://almowatin.org/v/nothex#secret")
-            .expect_err("bad id should fail");
+        let bad_id =
+            parse_secret_url("https://itylos.com/v/nothex#secret").expect_err("bad id should fail");
         assert!(bad_id.to_string().contains("malforme ou dangereux"));
     }
 

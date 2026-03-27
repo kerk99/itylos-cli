@@ -2,10 +2,10 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 pub const VERSION: &str = "v2.0.0-rust";
-pub const DOMAIN: &str = "https://almowatin.org";
-pub const API_CREATE: &str = "https://almowatin.org/api/v2/create_secret";
-pub const API_FETCH: &str = "https://almowatin.org/api/v2/fetch_secret";
-pub const API_BURN: &str = "https://almowatin.org/api/v2/burn_secret";
+pub const DOMAIN: &str = "https://itylos.com";
+pub const API_CREATE: &str = "https://itylos.com/api/v2/create_secret";
+pub const API_FETCH: &str = "https://itylos.com/api/v2/fetch_secret";
+pub const API_BURN: &str = "https://itylos.com/api/v2/burn_secret";
 pub const SERVER_PUB_KEY_B64: &str = "tsIkULXxSVudU1ZkJ3u5IpXN+11WpaVeog/4tG8qacI=";
 pub const MAX_ATTACHMENT_BYTES: usize = 8 * 1024 * 1024;
 pub const CAPSULE_PROTOCOL: &str = "ITYLOS_CAPSULE_V3_MULTI";

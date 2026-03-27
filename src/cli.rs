@@ -7,7 +7,7 @@ use std::path::PathBuf;
     version,
     about = "Sovereign ephemeral messaging CLI.",
     long_about = "ITYLOS chiffre localement des capsules ephemeres, les transmet au sanctuaire distant et detruit la copie serveur apres lecture.\n\nArchitecture CLI inspiree de ai-rsk: main minimal, clap derive, sous-commandes strictement typees.",
-    after_help = "Examples:\n  itylos send \"secret\"\n  itylos send -f secret.pdf -d 24h\n  itylos read https://almowatin.org/v/<id>#<key>\n  itylos verify proof.json\n  itylos mcp"
+    after_help = "Examples:\n  itylos send \"secret\"\n  itylos send -f secret.pdf -d 24h\n  itylos read https://itylos.com/v/<id>#<key>\n  itylos verify proof.json\n  itylos mcp"
 )]
 pub struct Cli {
     #[command(subcommand)]

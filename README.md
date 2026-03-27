@@ -38,6 +38,26 @@ This installs the binary as:
 itylos
 ```
 
+### From GitHub Releases
+
+Linux and macOS:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kerk99/itylos-cli/main/scripts/install.sh | sh
+```
+
+Windows PowerShell:
+
+```powershell
+iwr https://raw.githubusercontent.com/kerk99/itylos-cli/main/scripts/install.ps1 -UseBasicParsing | iex
+```
+
+Specific release:
+
+```bash
+ITYLOS_VERSION=v2.0.0 curl -fsSL https://raw.githubusercontent.com/kerk99/itylos-cli/main/scripts/install.sh | sh
+```
+
 ### Local development
 
 ```bash
@@ -54,12 +74,19 @@ If `%USERPROFILE%\.cargo\bin` is in your `PATH`, you can open any terminal and r
 itylos --help
 ```
 
+Release installers place the binary in:
+
+- Linux and macOS: `~/.local/bin/itylos`
+- Windows: `%LOCALAPPDATA%\Programs\itylos\bin\itylos.exe`
+
+After installation, open a new terminal and run `itylos`.
+
 ## Usage
 
 ```bash
 itylos send "secret"
 itylos send -f secret.pdf -d 24h
-itylos read https://almowatin.org/v/<secret_id>#<key>
+itylos read https://itylos.com/v/<secret_id>#<key>
 itylos verify proof.json
 itylos mcp
 ```
@@ -99,12 +126,20 @@ Client-side checks enforced:
 GitHub Actions workflow:
 - [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 
+Release assets on version tags:
+- `itylos-vX.Y.Z-x86_64-pc-windows-msvc.zip`
+- `itylos-vX.Y.Z-x86_64-unknown-linux-musl.tar.gz`
+- `itylos-vX.Y.Z-aarch64-unknown-linux-gnu.tar.gz`
+- `itylos-vX.Y.Z-x86_64-apple-darwin.tar.gz`
+- `itylos-vX.Y.Z-aarch64-apple-darwin.tar.gz`
+- `checksums-vX.Y.Z.txt`
+
 ## Current Status
 
 - Unit tests: passing
 - Debug build: passing
 - Release build: passing
-- Real endpoint tests against `https://almowatin.org`: executed
+- Real endpoint tests against `https://itylos.com`: target domain
 
 ## Notes
 

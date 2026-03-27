@@ -9,6 +9,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  BINARY_NAME: itylos
 
 jobs:
   test:
@@ -105,21 +106,21 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           cd target/${{ matrix.target }}/release
-          tar -czvf ../../../itylos-${{ matrix.target }}.${{ matrix.archive }} itylos
+          tar -czvf ../../../${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive }} ${{ env.BINARY_NAME }}
           cd ../../..
 
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           cd target/${{ matrix.target }}/release
-          7z a ../../../itylos-${{ matrix.target }}.${{ matrix.archive }} itylos.exe
+          7z a ../../../${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive }} ${{ env.BINARY_NAME }}.exe
           cd ../../..
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: itylos-${{ matrix.target }}
-          path: itylos-${{ matrix.target }}.${{ matrix.archive }}
+          name: ${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.target }}
+          path: ${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive }}
 
   publish:
     name: Create Release
@@ -143,7 +144,12 @@ jobs:
       - name: Create checksums
         run: |
           cd release
-          sha256sum * > checksums.txt
+          sha256sum * > checksums-${{ github.ref_name }}.txt
+
+      - name: Add install scripts
+        run: |
+          cp scripts/install.sh release/install.sh
+          cp scripts/install.ps1 release/install.ps1
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
