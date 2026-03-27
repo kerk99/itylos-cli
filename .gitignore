@@ -52,3 +52,13 @@ api/v1/config.php
 *.swp
 *.bak
 node_modules/
+
+# Rust
+/target/
+Cargo.lock.bak
+
+# Local integration artifacts
+proof-api-response.json
+proof-cli-format.json
+integration-attachment.txt
+tmp-read/

@@ -1,142 +1,112 @@
-![Interface ITYLOS CLI](https://itylos.com/assets/img/itylos-terminal-cli-v1-interface.webp)
+# itylos
 
-# itylos-cli
-🦋 ITYLOS : L’art de l’éphémère numérique. Outil de messagerie souverain avec chiffrement local AES-256, protocole Double-Shield et auto-destruction physique après lecture. Reprenez le contrôle sur vos secrets. / Sovereign ephemeral messaging with local encryption and burn-on-read technology. Restore your digital right to be forgotten.
+Rust CLI for sovereign ephemeral messaging with local AES-256-GCM encryption, zero-knowledge link sharing, and burn-on-read destruction via the `/api/v2/*` contract.
 
-# 🦋 ITYLOS Terminal  
-**Early Access – v1.0.1-beta**
+## Goals
 
-> **L'art de l'éphémère numérique.**  
-> **The art of digital ephemerality.**
+- Encrypt locally before any network request.
+- Never send the decryption key to the server.
+- Keep the decryption key in the URL fragment `#key`.
+- Validate the API contract strictly on the client side.
+- Verify signed destruction proofs with Ed25519.
+- Ship one clean Rust binary named `itylos`.
 
----
+## Architecture
 
-## 🌍 Présentation / Overview
+- [`src/main.rs`](src/main.rs): thin entrypoint, `run() -> anyhow::Result<()>`
+- [`src/cli.rs`](src/cli.rs): `clap` parsing
+- [`src/services.rs`](src/services.rs): user-facing workflows
+- [`src/crypto/mod.rs`](src/crypto/mod.rs): AES-256-GCM, AAD, AAD hash, proof verification
+- [`src/network/mod.rs`](src/network/mod.rs): HTTP client for `/api/v2/create_secret`, `/fetch_secret`, `/burn_secret`
+- [`src/types.rs`](src/types.rs): shared request/response types and constants
+- [`src/mcp/mod.rs`](src/mcp/mod.rs): MCP stdio server
 
-**ITYLOS** est un outil souverain en ligne de commande permettant d’envoyer des **messages chiffrés éphémères** qui s’autodétruisent physiquement après lecture.  
-Le chiffrement est effectué localement, la destruction est vérifiable, et aucune donnée sensible n’est conservée au-delà de sa durée de vie.
+Reference architecture used for repo cleanliness and release discipline:
+- local clone: `C:\Users\Kerki\Desktop\itylos-cli-v2\ai-rsk-reference`
 
-**ITYLOS** is a sovereign command-line tool designed to send **encrypted ephemeral messages** that physically self-destruct after being read.
+## Install
 
----
-
-## 🛡️ Manifeste de Bienveillance / Benevolence Manifesto
-
-### 🇫🇷 Pourquoi ITYLOS ?
-Internet n’oublie rien. Les humains, si.  
-ITYLOS restaure un droit fondamental : **l’oubli numérique réel**.
-
-1. **PROTÉGER** — Réduire les traces numériques inutiles.  
-2. **RESPECTER** — Vos secrets sont chiffrés chez vous.  
-3. **ÉDUQUER** — La confidentialité est une compétence.  
-4. **RESPONSABILISER** — Un message est un acte de confiance.
-
-### 🇬🇧 Why ITYLOS?
-The internet forgets nothing — humans should be allowed to.  
-ITYLOS restores a fundamental right: **real digital oblivion**.
-
----
-
-## 🔐 Sécurité & Architecture / Security & Architecture
-
-### 🔒 Double-Shield Protocol (Zero-Knowledge)
-
-| Layer | Scope | Description |
-|------|------|-------------|
-| **Layer 1** | Local | AES-256-GCM encryption on your machine. The key never leaves your terminal. |
-| **Layer 2** | Server | Additional encryption before storage (API → MariaDB). |
-| **Burn-on-Read** | Lifecycle | Physical destruction immediately after successful read. |
-
-✔ Zero-knowledge by design  
-✔ No plaintext storage  
-✔ No recovery possible
-
----
-
-## 🚀 Installation Rapide / Direct Installation
-
-### Prérequis
-- **Go 1.21+**
-
-### Installation via GitHub
+### From source
 
 ```bash
-go install github.com/kerk99/itylos-cli@latest
+cargo install --path .
 ```
 
-### Configuration par OS
+This installs the binary as:
 
-#### 🪟 Windows (PowerShell)
+```bash
+itylos
+```
+
+### Local development
+
+```bash
+cargo build
+cargo test
+cargo build --release
+```
+
+### Windows
+
+If `%USERPROFILE%\.cargo\bin` is in your `PATH`, you can open any terminal and run:
 
 ```powershell
-Set-Alias itylos "$HOME\go\bin\itylos.exe"
+itylos --help
 ```
 
-#### 🍎 macOS & 🐧 Linux
+## Usage
 
 ```bash
-sudo mv ~/go/bin/itylos /usr/local/bin/itylos
+itylos send "secret"
+itylos send -f secret.pdf -d 24h
+itylos read https://almowatin.org/v/<secret_id>#<key>
+itylos verify proof.json
+itylos mcp
 ```
 
----
+## API Contract
 
-## 🛠️ Commandes CLI réelles (v1.0.1-beta)
+The CLI is aligned with:
 
-| Commande | Action concrète (FR) | Action (EN) |
-|--------|---------------------|-------------|
-| `itylos send "msg"` | Chiffre localement et génère un lien sécurisé | Encrypt and generate secure link |
-| `-d 24h / 7j` | Définit la durée de vie du message | Set message lifetime |
-| `itylos mission` | Affiche le Manifeste de bienveillance | Display the manifesto |
-| `itylos status` | Vérifie l’état du Sanctuaire ITYLOS | Real-time service status |
-| `itylos update` | Vérifie les mises à jour | Check for updates |
+- `POST /api/v2/create_secret`
+- `GET /api/v2/fetch_secret?id=<secret_id>`
+- `POST /api/v2/burn_secret`
 
----
+Client-side checks enforced:
 
-## 🌐 À propos de itylos.com / About itylos.com
+- `payload` must match `base64url.base64url`
+- `ttl` must be `3600`, `86400`, or `604800`
+- `aad_hash` must be hex-64 and consistent with `sha256(AAD(ttl))`
+- `has_password` and `pwd_salt` must appear together
+- fetch IDs must be hex-32
+- attachment names are sanitized on extraction
 
-**ITYLOS** est également une plateforme web souveraine dédiée au partage de secrets éphémères.  
-Hébergement en **Suisse (Genève)** – conformité **RGPD / LPD suisse**.
+## Security Model
 
-Principes clés :
-- Aucune clé de déchiffrement stockée
-- Aucune journalisation des secrets
-- Destruction vérifiable
+- Zero-knowledge: the server never receives the fragment key.
+- Local encryption: the cleartext is serialized and encrypted before upload.
+- AAD-bound TTL: the TTL participates in authenticated encryption.
+- Zeroization: sensitive buffers are cleared when possible with `zeroize`.
+- Proof verification: destruction proofs are normalized and verified with Ed25519.
 
----
+## Quality Gates
 
-## ⚖️ Conformité – RGPD (Art. 17)
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test`
+- `cargo build --release`
 
-Chaque message génère une **preuve de destruction** permettant de vérifier la suppression définitive de la donnée.
+GitHub Actions workflow:
+- [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 
----
+## Current Status
 
-## 🧪 Guide de test d’installation (GitHub)
+- Unit tests: passing
+- Debug build: passing
+- Release build: passing
+- Real endpoint tests against `https://almowatin.org`: executed
 
-### Étapes
+## Notes
 
-1. Ajouter `itylos.go` et `go.mod` à la racine du dépôt
-2. Attendre ~60 secondes
-3. Tester :
-
-```bash
-go install github.com/kerk99/itylos-cli@latest
-```
-
-### Résultat attendu
-- Téléchargement des dépendances
-- Binaire généré dans `~/go/bin`
-
----
-
-## 🤝 Contribution
-
-Projet en **Early Access (beta)**.  
-Retours, audits et contributions bienvenus.
-
----
-
-## 🦋 Note finale
-
-**Souveraineté activée. Votre message est protégé. https://itylos.com/fr/ **  
-**Sovereignty active. Your message is protected. https://itylos.com/en/ **
-
+- Legacy Go and PHP files are still present for migration reference.
+- The Rust binary target is now `itylos`.
