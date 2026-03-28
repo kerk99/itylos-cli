@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://itylos.com/assets/itylos-butterfly-pixels-identity-450x300.webp" alt="itylos logo" width="200">
+  <img src="assets/logo-itylos.jpeg" alt="itylos logo" width="200">
 </p>
 
 <p align="center">
