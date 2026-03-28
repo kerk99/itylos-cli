@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo-itylos.jpeg" alt="itylos logo" width="200">
+  <img src="assets/itylos-logo.webp" alt="itylos logo" width="200">
 </p>
 
 <p align="center">
