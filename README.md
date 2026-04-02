@@ -17,7 +17,8 @@
   <a href="#utilisation">Utilisation</a> &bull;
   <a href="#modèle-de-sécurité">Sécurité</a> &bull;
   <a href="#contrat-api">API</a> &bull;
-  <a href="#architecture">Architecture</a>
+  <a href="#architecture">Architecture</a> &bull;
+  <a href="https://github.com/kerk99/itylos-cli/wiki">Wiki / Guide</a>
 </p>
 
 ---
@@ -117,11 +118,17 @@ Le CLI déchiffre localement, affiche le contenu, extrait les pièces jointes, p
 
 ### Vérifier une preuve de destruction
 
+Apres la lecture, le destinataire recoit un **Proof ID**. Il l'envoie a l'expediteur qui le colle dans `verify` :
+
 ```bash
-itylos verify proof.json
+itylos verify a3380d6b6895ef22034d54c38f1eaf27
 ```
 
-Authentifie cryptographiquement (Ed25519) qu'une capsule a bien été détruite par ITYLOS.
+Le CLI va chercher la preuve sur le serveur et verifie la signature Ed25519. Vous pouvez aussi verifier un fichier JSON local :
+
+```bash
+itylos verify preuve.json
+```
 
 ### Serveur MCP (intégration IA)
 
