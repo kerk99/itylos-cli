@@ -11,7 +11,9 @@ use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
 use rand::RngCore;
-use serde_json::{Map, Value};
+#[cfg(test)]
+use serde_json::Map;
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 use zeroize::{Zeroize, Zeroizing};
 
@@ -216,7 +218,7 @@ pub fn decrypt_local_with_password(
 }
 
 pub fn verify_proof_signature(proof: &Value) -> Result<bool> {
-    let mut unsigned = canonicalize_json(proof);
+    let mut unsigned = proof.clone();
     let verification = unsigned
         .get_mut("verification")
         .and_then(Value::as_object_mut)
@@ -260,6 +262,7 @@ pub fn verify_proof_signature(proof: &Value) -> Result<bool> {
     Ok(public_key.verify(&payload, &signature).is_ok())
 }
 
+#[cfg(test)]
 fn canonicalize_json(value: &Value) -> Value {
     match value {
         Value::Object(map) => {

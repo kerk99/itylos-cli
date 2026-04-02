@@ -1,5 +1,8 @@
 use anyhow::{Context, Result, bail};
-use base64::{Engine as _, engine::general_purpose::STANDARD};
+use base64::{
+    Engine as _,
+    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
+};
 use regex::Regex;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
@@ -97,7 +100,7 @@ pub fn read_secret(api: &ItylosApi, url: &str) -> Result<()> {
 
     let burn = api.burn_secret_with_proof(&secret_id)?;
     if burn.success {
-        if let Some(proof) = burn.proof {
+        if let Some(ref proof) = burn.proof {
             let normalized = normalize_proof_document(serde_json::json!({ "proof": proof }))?;
             let signature_ok = crypto::verify_proof_signature(&normalized).unwrap_or(false);
             if signature_ok {
@@ -105,6 +108,7 @@ pub fn read_secret(api: &ItylosApi, url: &str) -> Result<()> {
             } else {
                 ui::print_burn_unverified();
             }
+            ui::print_proof_id_hint(&proof.proof_id);
         } else {
             ui::print_burn_no_proof();
         }
@@ -114,11 +118,30 @@ pub fn read_secret(api: &ItylosApi, url: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn verify_proof(path: &Path) -> Result<()> {
-    let payload = std::fs::read_to_string(path).context("Fichier introuvable")?;
-    let json: Value = serde_json::from_str(&payload).context("JSON invalide")?;
-    let canonical = normalize_proof_document(json)?;
-    if crypto::verify_proof_signature(&canonical)? {
+pub fn verify_proof(input: &str, api: Option<&ItylosApi>) -> Result<()> {
+    let hex32 = Regex::new(r"^[a-fA-F0-9]{32}$").expect("valid regex");
+    let json = if hex32.is_match(input) {
+        let api = api.ok_or_else(|| {
+            ItylosError::Message("Connexion necessaire pour verifier un proof_id.".to_string())
+        })?;
+        ui::print_fetching_proof(input);
+        let mut proof = api.fetch_proof(input)?;
+        // Remove fields added by proof_download that weren't in the signed payload
+        if let Some(obj) = proof.as_object_mut() {
+            obj.remove("download");
+            if let Some(v) = obj.get_mut("verification").and_then(|v| v.as_object_mut()) {
+                v.remove("ed25519_public_key");
+            }
+        }
+        proof
+    } else {
+        let path = Path::new(input);
+        let payload = std::fs::read_to_string(path)
+            .with_context(|| format!("Fichier introuvable : {}", path.display()))?;
+        serde_json::from_str(&payload).context("JSON invalide")?
+    };
+
+    if crypto::verify_proof_signature(&json)? {
         ui::print_proof_authentic();
     } else {
         ui::print_proof_forged();
@@ -237,7 +260,12 @@ fn validate_create_request_parts(
         bail!("aad_hash incoherent avec l'AAD attendu");
     }
     let pair_is_consistent = match (has_password, pwd_salt) {
-        (true, Some(salt)) if !salt.is_empty() && STANDARD.decode(salt).is_ok() => true,
+        (true, Some(salt))
+            if !salt.is_empty()
+                && (URL_SAFE_NO_PAD.decode(salt).is_ok() || STANDARD.decode(salt).is_ok()) =>
+        {
+            true
+        }
         (false, None) => true,
         (false, Some("")) => true,
         _ => false,

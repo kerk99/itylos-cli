@@ -99,9 +99,13 @@ itylos --help
 itylos send "mon secret"
 itylos send -f document.pdf -d 24h
 itylos send "message" -f fichier.zip -d 7j
+itylos send "secret" -p                    # Proteger avec un mot de passe
+itylos send -f confidentiel.pdf -d 24h -p  # Fichier + mot de passe
 ```
 
 Durées disponibles : `1h` (défaut), `24h`, `7j`
+
+Le flag `-p` / `--password` demande un mot de passe interactif avec confirmation. Le destinataire devra saisir le même mot de passe pour déchiffrer la capsule.
 
 ### Lire et détruire une capsule
 
@@ -137,8 +141,11 @@ Expose l'outil `itylos_create_capsule` via le protocole JSON-RPC stdio pour Clau
 | **Zéroisation** | Les buffers sensibles (clés dérivées, plaintext) sont effacés en mémoire avec `zeroize` |
 | **Preuve de destruction** | Les preuves sont normalisées et vérifiées avec Ed25519 |
 | **Anti traffic-analysis** | Le payload est paddé par paliers (1024/10240/+512) avec du bruit aléatoire |
+| **Protection par mot de passe** | Double couche optionnelle : PBKDF2-HMAC-SHA256 (300k itérations) combinée avec la clé URL |
 
 ### Processus cryptographique
+
+**Sans mot de passe :**
 
 1. **Clé locale** : 32 octets CSPRNG → encodée en base64url (fragment `#key`)
 2. **Dérivation** : `SHA-256(url_key)` → clé AES 256 bits
@@ -146,6 +153,16 @@ Expose l'outil `itylos_create_capsule` via le protocole JSON-RPC stdio pour Clau
 4. **AAD** : `{"v":"2.0","alg":"AES-256-GCM","ttl":<seconds>}`
 5. **Hash serveur** : `SHA-256(aad_bytes)` encodé en hex
 6. **Payload** : `base64url(ciphertext).base64url(nonce)`
+
+**Avec mot de passe (`-p`) :**
+
+1. Étapes 1-2 identiques (génération de `url_key`)
+2. **Salt** : 16 octets CSPRNG → encodé en base64url, envoyé au serveur dans `pwd_salt`
+3. **Dérivation password** : `PBKDF2-HMAC-SHA256(password, salt, 300000)` → 32 octets
+4. **Clé finale** : `SHA-256(url_key || pwd_key)` → clé AES 256 bits
+5. Le reste est identique (AES-256-GCM, AAD, padding)
+
+Compatible avec le frontend web (même algorithme dans `crypto.js`).
 
 ## Contrat API
 
@@ -197,7 +214,7 @@ CI GitHub Actions multi-plateforme (Ubuntu, macOS, Windows) avec release automat
 
 ## Tests
 
-25 tests unitaires couvrant :
+30 tests unitaires couvrant :
 
 - Parsing CLI (sous-commandes, flags, help/version)
 - Crypto roundtrip (encrypt → decrypt → plaintext identique)
@@ -207,6 +224,7 @@ CI GitHub Actions multi-plateforme (Ubuntu, macOS, Windows) avec release automat
 - Validation du contrat API (payload, TTL, aad_hash, password pair)
 - Sanitization des noms de fichiers (anti path traversal)
 - Rendu des capsules (V3 multi-attachment, fallback texte)
+- Roundtrip chiffrement/déchiffrement avec mot de passe (bon mot de passe, mauvais, absent)
 
 ## License
 

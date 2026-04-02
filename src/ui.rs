@@ -66,27 +66,27 @@ fn build_banner() -> String {
     let commands: &[(&str, &str, &str)] = &[
         (
             "send",
-            "Chiffre localement et cr\u{00E9}e un lien \u{00E9}ph\u{00E9}m\u{00E8}re",
-            "itylos send \"secret\" | itylos send -f secret.pdf -d 24h",
+            "Envoyer un secret chiffr\u{00E9} / Send an encrypted secret",
+            "itylos send \"secret\" -p | itylos send -f doc.pdf -d 24h",
         ),
         (
             "read",
-            "D\u{00E9}chiffre une capsule puis d\u{00E9}truit la copie serveur",
+            "Lire un secret et le d\u{00E9}truire / Read and destroy",
             "itylos read https://itylos.com/v/<id>#<cl\u{00E9}>",
         ),
         (
             "verify",
-            "V\u{00E9}rifie la signature Ed25519 d'une preuve de destruction",
-            "itylos verify proof.json",
+            "V\u{00E9}rifier une preuve / Verify a destruction proof",
+            "itylos verify <proof_id> | itylos verify preuve.json",
         ),
         (
             "mcp",
-            "D\u{00E9}marre le serveur MCP pour Intelligence Artificielle",
+            "Serveur MCP pour IA / MCP server for AI assistants",
             "itylos mcp",
         ),
         (
             "update",
-            "Met \u{00E0} jour itylos vers la derni\u{00E8}re version",
+            "Mise \u{00E0} jour / Update to latest version",
             "itylos update",
         ),
     ];
@@ -225,6 +225,23 @@ pub fn print_file_extracted(name: &str, size: usize) {
         "\u{2192}".cyan(),
         name,
         size
+    );
+}
+
+pub fn print_proof_id_hint(proof_id: &str) {
+    println!("  {} Proof ID : {}", "\u{1F4CB}".dimmed(), proof_id.cyan());
+    println!(
+        "  {}",
+        "Envoyez ce proof_id a l'expediteur pour qu'il verifie la destruction :".dimmed()
+    );
+    println!("  {}", format!("itylos verify {proof_id}").cyan());
+}
+
+pub fn print_fetching_proof(proof_id: &str) {
+    println!(
+        "  {} Recuperation de la preuve {} sur le serveur...",
+        "\u{1F50D}".dimmed(),
+        proof_id.dimmed()
     );
 }
 

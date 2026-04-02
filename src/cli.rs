@@ -5,20 +5,44 @@ use std::path::PathBuf;
 #[command(
     name = "itylos",
     version,
-    about = "Messagerie \u{00E9}ph\u{00E9}m\u{00E8}re souveraine en CLI.",
-    long_about = "ITYLOS chiffre localement des capsules \u{00E9}ph\u{00E9}m\u{00E8}res, les transmet au sanctuaire distant\net d\u{00E9}truit la copie serveur apr\u{00E8}s lecture.\n\n\
-                  Commandes :\n  \
-                    itylos send \"secret\"       Chiffre et cr\u{00E9}e un lien \u{00E9}ph\u{00E9}m\u{00E8}re\n  \
-                    itylos read <url>#<cl\u{00E9}>    D\u{00E9}chiffre puis d\u{00E9}truit\n  \
-                    itylos verify proof.json   V\u{00E9}rifie une preuve Ed25519\n  \
-                    itylos mcp                 Serveur MCP pour IA\n  \
-                    itylos update              Met \u{00E0} jour vers la derni\u{00E8}re version",
-    after_help = "Exemples :\n  \
-                    itylos send \"secret\"\n  \
-                    itylos send -f secret.pdf -d 24h\n  \
-                    itylos read https://itylos.com/v/<id>#<cl\u{00E9}>\n  \
-                    itylos verify proof.json\n  \
-                    itylos update"
+    about = "Messagerie secrete qui s'autodetruit. / Self-destructing secret messenger.",
+    long_about = "\
+ITYLOS — Messagerie secrete qui s'autodetruit
+ITYLOS — Self-destructing secret messenger
+
+Vous ecrivez un secret, il est chiffre sur votre machine, envoye au serveur,
+et detruit automatiquement apres lecture. Personne d'autre ne peut le lire.
+The secret is encrypted on your machine, sent to the server,
+and automatically destroyed after reading. Nobody else can read it.
+
+Commandes / Commands :
+  itylos send \"secret\"       Envoyer un secret / Send a secret
+  itylos send \"secret\" -p    Avec mot de passe / With password
+  itylos send -f doc.pdf     Envoyer un fichier / Send a file
+  itylos read <lien>         Lire et detruire / Read and destroy
+  itylos verify preuve.json  Verifier une preuve / Verify a proof
+  itylos mcp                 Serveur MCP pour IA / MCP server for AI
+  itylos update              Mise a jour / Update to latest version",
+    after_help = "\
+Exemples / Examples :
+
+  Envoyer un message secret (dure 1h par defaut) :
+    itylos send \"mot de passe du wifi\"
+
+  Envoyer un fichier qui s'autodetruit apres 24h :
+    itylos send -f document.pdf -d 24h
+
+  Proteger avec un mot de passe (le destinataire devra le saisir) :
+    itylos send \"secret\" -p
+
+  Fichier + mot de passe + duree 7 jours :
+    itylos send -f confidentiel.pdf -d 7j -p
+
+  Lire un secret (le lien vous est donne par l'expediteur) :
+    itylos read https://itylos.com/v/abc123#cle
+
+  Mettre a jour :
+    itylos update"
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -27,31 +51,74 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Chiffre localement et cree un lien ephemere.
+    /// Envoyer un secret chiffre. / Send an encrypted secret.
+    #[command(after_help = "\
+Exemples :
+  itylos send \"mon mot de passe\"           Secret texte, dure 1h
+  itylos send -f photo.jpg -d 24h          Fichier, dure 24h
+  itylos send \"code wifi\" -p               Protege par mot de passe
+  itylos send -f rapport.pdf -d 7j -p      Fichier + password + 7 jours
+
+Durees disponibles : 1h (defaut), 24h, 7j")]
     Send {
-        /// Message a chiffrer. Peut etre vide si -f est fourni.
+        /// Le secret a envoyer (texte). Peut etre vide si -f est utilise.
+        /// The secret to send (text). Can be empty if -f is used.
         text: Option<String>,
-        /// Duree de vie (1h, 24h, 7j).
+
+        /// Duree de vie : 1h, 24h ou 7j. / Lifetime: 1h, 24h or 7d.
         #[arg(short = 'd', default_value = "1h")]
         duration: String,
-        /// Fichier a joindre.
+
+        /// Fichier a joindre (max 8 Mo). / File to attach (max 8 MB).
         #[arg(short = 'f')]
         file: Option<PathBuf>,
-        /// Proteger la capsule avec un mot de passe.
+
+        /// Ajouter un mot de passe. Le destinataire devra le saisir.
+        /// Add a password. The recipient will need to enter it.
         #[arg(short = 'p', long = "password")]
         password: bool,
     },
-    /// Dechiffre une capsule localement puis demande sa destruction serveur.
-    Read { url: String },
-    /// Verifie la signature Ed25519 d'une preuve de destruction.
-    Verify { proof: PathBuf },
-    /// D\u{00E9}marre le serveur MCP sur stdio.
+
+    /// Lire un secret et le detruire du serveur. / Read a secret and destroy it.
+    #[command(after_help = "\
+Le lien vous est donne par la personne qui a cree le secret.
+Apres lecture, le secret est definitivement detruit du serveur.
+
+Exemple :
+  itylos read https://itylos.com/v/abc123def456#MaCleSecrete
+
+Si le secret est protege par mot de passe, le CLI vous le demandera.")]
+    Read {
+        /// Le lien complet recu de l'expediteur (avec le # et la cle).
+        /// The full link received from the sender (with # and key).
+        url: String,
+    },
+
+    /// Verifier une preuve de destruction. / Verify a destruction proof.
+    #[command(after_help = "\
+Quand quelqu'un lit votre secret, le serveur le detruit et genere une preuve.
+Le destinataire recoit un Proof ID qu'il peut vous envoyer.
+Vous collez ce Proof ID ici pour verifier que la destruction a bien eu lieu.
+
+Exemples :
+  itylos verify 5eeb1fcfa615d644006ab35348a02e55    Proof ID (recommande)
+  itylos verify preuve.json                          Fichier JSON local")]
+    Verify {
+        /// Proof ID (ex: 5eeb1f...) ou fichier JSON. / Proof ID or JSON file.
+        proof: String,
+    },
+
+    /// Demarrer le serveur MCP pour assistants IA (Claude, Cursor...).
+    /// Start MCP server for AI assistants (Claude, Cursor...).
     Mcp,
-    /// Met \u{00E0} jour itylos vers la derni\u{00E8}re version.
-    #[command(
-        after_help = "V\u{00E9}rifie GitHub Releases pour une version plus r\u{00E9}cente et l'installe.\n\
-                      Utilise cargo si disponible, sinon t\u{00E9}l\u{00E9}charge le binaire depuis GitHub."
-    )]
+
+    /// Mettre a jour vers la derniere version. / Update to the latest version.
+    #[command(after_help = "\
+Verifie GitHub Releases et installe la derniere version.
+Utilise cargo si disponible, sinon telecharge le binaire directement.
+
+Checks GitHub Releases and installs the latest version.
+Uses cargo if available, otherwise downloads the binary directly.")]
     Update,
 }
 

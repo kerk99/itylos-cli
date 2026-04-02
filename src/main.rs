@@ -84,7 +84,8 @@ fn run() -> Result<()> {
             read_secret(&api, &url)?;
         }
         Commands::Verify { proof } => {
-            verify_proof(&proof)?;
+            let api = ItylosApi::new()?;
+            verify_proof(&proof, Some(&api))?;
         }
         Commands::Mcp => {
             mcp::start_mcp_server()?;

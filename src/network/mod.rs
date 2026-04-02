@@ -3,7 +3,8 @@ use reqwest::blocking::Client;
 use std::time::Duration;
 
 use crate::types::{
-    API_BURN, API_CREATE, API_FETCH, ApiErrorRes, BurnReq, BurnRes, CreateReq, CreateRes, FetchRes,
+    API_BURN, API_CREATE, API_FETCH, API_PROOF, ApiErrorRes, BurnReq, BurnRes, CreateReq,
+    CreateRes, FetchRes,
 };
 
 pub struct ItylosApi {
@@ -85,6 +86,28 @@ impl ItylosApi {
             );
         }
         let body: BurnRes = response.json().context("reponse burn invalide")?;
+        Ok(body)
+    }
+
+    pub fn fetch_proof(&self, proof_id: &str) -> Result<serde_json::Value> {
+        let response = self
+            .client
+            .get(API_PROOF)
+            .query(&[("id", proof_id)])
+            .send()
+            .context("Erreur reseau")?;
+        let status = response.status();
+        if !status.is_success() {
+            let err: ApiErrorRes = response.json().unwrap_or(ApiErrorRes {
+                success: false,
+                error: Some(format!("Erreur API HTTP {status}")),
+            });
+            bail!(
+                err.error
+                    .unwrap_or_else(|| format!("Erreur API HTTP {status}"))
+            );
+        }
+        let body: serde_json::Value = response.json().context("reponse proof invalide")?;
         Ok(body)
     }
 }
