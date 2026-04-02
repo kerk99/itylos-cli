@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>itylos — Messagerie éphémère souveraine en CLI</strong>
+  <strong>itylos // Messagerie éphémère souveraine en CLI</strong>
 </p>
 
 <p align="center">
@@ -229,3 +229,19 @@ CI GitHub Actions multi-plateforme (Ubuntu, macOS, Windows) avec release automat
 ## License
 
 MIT — [kachouri.com](https://kachouri.com)
+
+---
+
+<p align="center">
+  <a href="https://github.com/kerk99/itylos-cli"><img src="https://res.cloudinary.com/dmlicmhuw/image/upload/q_auto/f_auto/v1775133005/itylos-butterfly-pixels-identity-450x300_vqljkg.webp" alt="itylos" width="40"></a>
+</p>
+<p align="center">
+  <strong>itylos</strong> Messagerie éphémère souveraine en CLI<br>
+  <a href="https://github.com/kerk99/itylos-cli">GitHub</a> &bull;
+  <a href="https://crates.io/crates/itylos-cli">crates.io</a> &bull;
+  <a href="https://itylos.com/">Website</a> &bull;
+  <a href="https://github.com/kerk99/itylos-cli/issues">Report Issue</a>
+</p>
+<p align="center">
+  <sub>Made with Rust by <a href="https://github.com/kerk99/itylos-cli">Mehdi Kachouri</a> MIT License</sub>
+</p>
