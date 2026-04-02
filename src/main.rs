@@ -61,14 +61,21 @@ fn run() -> Result<()> {
             text,
             duration,
             file,
+            password,
         } => {
             let api = ItylosApi::new()?;
+            let pwd = if password {
+                Some(ui::prompt_new_password()?)
+            } else {
+                None
+            };
             send_secret(
                 &api,
                 SendOptions {
                     text: text.unwrap_or_default(),
                     file,
                     ttl: Ttl::parse(&duration),
+                    password: pwd,
                 },
             )?;
         }

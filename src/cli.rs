@@ -37,6 +37,9 @@ pub enum Commands {
         /// Fichier a joindre.
         #[arg(short = 'f')]
         file: Option<PathBuf>,
+        /// Proteger la capsule avec un mot de passe.
+        #[arg(short = 'p', long = "password")]
+        password: bool,
     },
     /// Dechiffre une capsule localement puis demande sa destruction serveur.
     Read { url: String },
@@ -65,6 +68,7 @@ mod tests {
                 text,
                 duration,
                 file,
+                ..
             }) => {
                 assert_eq!(text.as_deref(), Some("secret"));
                 assert_eq!(duration, "1h");
@@ -83,6 +87,7 @@ mod tests {
                 text,
                 duration,
                 file,
+                ..
             }) => {
                 assert_eq!(text, None);
                 assert_eq!(duration, "24h");

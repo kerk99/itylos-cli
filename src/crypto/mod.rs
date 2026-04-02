@@ -8,6 +8,8 @@ use base64::{
     engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
 };
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+use hmac::Hmac;
+use pbkdf2::pbkdf2;
 use rand::RngCore;
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
@@ -20,6 +22,7 @@ pub struct EncryptionOutcome {
     pub payload: String,
     pub aad_hash_hex: String,
     pub key_fragment: String,
+    pub salt_b64: Option<String>,
 }
 
 pub fn generate_url_key() -> Result<Zeroizing<Vec<u8>>> {
@@ -35,6 +38,37 @@ pub fn encode_url_key(url_key: &[u8]) -> String {
 pub fn derive_key(url_key: &[u8]) -> Zeroizing<Vec<u8>> {
     let digest = Sha256::digest(url_key);
     Zeroizing::new(digest.to_vec())
+}
+
+/// Derive a 256-bit key from a password + salt using PBKDF2-HMAC-SHA256 (300k iterations).
+/// Compatible with the JS frontend (crypto.js derivePasswordKey fallback).
+pub fn derive_password_key(password: &str, salt: &[u8]) -> Result<Zeroizing<Vec<u8>>> {
+    let mut derived = Zeroizing::new(vec![0u8; 32]);
+    pbkdf2::<Hmac<Sha256>>(password.as_bytes(), salt, 300_000, &mut derived)
+        .map_err(|_| ItylosError::Message("erreur PBKDF2".to_string()))?;
+    Ok(derived)
+}
+
+/// Derive final AES key from url_key + password: SHA-256(url_key || pwd_key).
+/// Compatible with the JS frontend (crypto.js encryptSecret with password).
+pub fn derive_combined_key(
+    url_key: &[u8],
+    password: &str,
+    salt: &[u8],
+) -> Result<Zeroizing<Vec<u8>>> {
+    let pwd_key = derive_password_key(password, salt)?;
+    let mut combined = Vec::with_capacity(url_key.len() + pwd_key.len());
+    combined.extend_from_slice(url_key);
+    combined.extend_from_slice(&pwd_key);
+    let digest = Sha256::digest(&combined);
+    combined.zeroize();
+    Ok(Zeroizing::new(digest.to_vec()))
+}
+
+pub fn generate_salt() -> Vec<u8> {
+    let mut salt = vec![0u8; 16];
+    rand::rngs::OsRng.fill_bytes(&mut salt);
+    salt
 }
 
 pub fn build_aad(ttl: u64) -> Result<Vec<u8>> {
@@ -72,13 +106,24 @@ pub fn pad_content(content: &str) -> Result<PaddedPayload> {
     })
 }
 
-pub fn encrypt_local(message_json: &str, ttl: u64) -> Result<EncryptionOutcome> {
+pub fn encrypt_local_with_password(
+    message_json: &str,
+    ttl: u64,
+    password: Option<&str>,
+) -> Result<EncryptionOutcome> {
     let url_key = generate_url_key()?;
     let key_fragment = encode_url_key(&url_key);
     let payload = pad_content(message_json)?;
     let plaintext_json = serde_json::to_vec(&payload).context("erreur de serialisation JSON")?;
     let mut plaintext = Zeroizing::new(plaintext_json);
-    let final_key = derive_key(&url_key);
+
+    let (final_key, salt) = if let Some(pwd) = password {
+        let salt = generate_salt();
+        let key = derive_combined_key(&url_key, pwd, &salt)?;
+        (key, Some(salt))
+    } else {
+        (derive_key(&url_key), None)
+    };
 
     let cipher = Aes256Gcm::new_from_slice(&final_key).context("erreur AES")?;
     let mut nonce_bytes = [0u8; 12];
@@ -105,10 +150,21 @@ pub fn encrypt_local(message_json: &str, ttl: u64) -> Result<EncryptionOutcome> 
         ),
         aad_hash_hex: compute_aad_hash_hex(ttl)?,
         key_fragment,
+        salt_b64: salt.map(|s| URL_SAFE_NO_PAD.encode(s)),
     })
 }
 
 pub fn decrypt_local(payload_str: &str, key_b64: &str, ttl: u64) -> Result<Zeroizing<String>> {
+    decrypt_local_with_password(payload_str, key_b64, ttl, None, None)
+}
+
+pub fn decrypt_local_with_password(
+    payload_str: &str,
+    key_b64: &str,
+    ttl: u64,
+    password: Option<&str>,
+    salt_b64: Option<&str>,
+) -> Result<Zeroizing<String>> {
     let url_key = URL_SAFE_NO_PAD
         .decode(key_b64)
         .context("cle URL invalide")?;
@@ -126,7 +182,14 @@ pub fn decrypt_local(payload_str: &str, key_b64: &str, ttl: u64) -> Result<Zeroi
         bail!("nonce invalide");
     }
 
-    let final_key = derive_key(&url_key);
+    let final_key = match (password, salt_b64) {
+        (Some(pwd), Some(salt)) => {
+            let salt_bytes = URL_SAFE_NO_PAD.decode(salt).context("salt invalide")?;
+            derive_combined_key(&url_key, pwd, &salt_bytes)?
+        }
+        _ => derive_key(&url_key),
+    };
+
     let cipher = Aes256Gcm::new_from_slice(&final_key).context("erreur AES")?;
     let aad_bytes = build_aad(ttl)?;
     let plaintext = cipher
@@ -243,7 +306,8 @@ mod tests {
     fn encrypt_then_decrypt_roundtrip() {
         let message =
             r#"{"protocol":"ITYLOS_CAPSULE_V3_MULTI","message":"bonjour","attachments":[]}"#;
-        let encrypted = encrypt_local(message, 3600).expect("encryption should work");
+        let encrypted =
+            encrypt_local_with_password(message, 3600, None).expect("encryption should work");
         let decrypted =
             decrypt_local(&encrypted.payload, &encrypted.key_fragment, 3600).expect("decrypt");
         assert_eq!(&*decrypted, message);
@@ -260,10 +324,47 @@ mod tests {
     }
 
     #[test]
+    fn encrypt_then_decrypt_roundtrip_with_password() {
+        let message =
+            r#"{"protocol":"ITYLOS_CAPSULE_V3_MULTI","message":"confidentiel","attachments":[]}"#;
+        let encrypted = encrypt_local_with_password(message, 3600, Some("hunter2"))
+            .expect("encryption with password should work");
+        assert!(encrypted.salt_b64.is_some());
+
+        // Decrypt with correct password
+        let decrypted = decrypt_local_with_password(
+            &encrypted.payload,
+            &encrypted.key_fragment,
+            3600,
+            Some("hunter2"),
+            encrypted.salt_b64.as_deref(),
+        )
+        .expect("decrypt with correct password");
+        assert_eq!(&*decrypted, message);
+
+        // Decrypt with wrong password should fail
+        let error = decrypt_local_with_password(
+            &encrypted.payload,
+            &encrypted.key_fragment,
+            3600,
+            Some("wrong"),
+            encrypted.salt_b64.as_deref(),
+        )
+        .expect_err("wrong password should fail");
+        assert!(error.to_string().contains("dechiffrement echoue"));
+
+        // Decrypt without password should fail
+        let error2 = decrypt_local(&encrypted.payload, &encrypted.key_fragment, 3600)
+            .expect_err("missing password should fail");
+        assert!(error2.to_string().contains("dechiffrement echoue"));
+    }
+
+    #[test]
     fn decrypt_rejects_wrong_ttl() {
         let message =
             r#"{"protocol":"ITYLOS_CAPSULE_V3_MULTI","message":"bonjour","attachments":[]}"#;
-        let encrypted = encrypt_local(message, 3600).expect("encryption should work");
+        let encrypted =
+            encrypt_local_with_password(message, 3600, None).expect("encryption should work");
         let error = decrypt_local(&encrypted.payload, &encrypted.key_fragment, 86_400)
             .expect_err("ttl mismatch should fail");
         assert!(error.to_string().contains("dechiffrement echoue"));

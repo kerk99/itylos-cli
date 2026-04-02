@@ -82,7 +82,13 @@ fn handle_tool_call(api: &ItylosApi, request: &Value) -> Value {
         return error_response("Erreur: Le texte du secret est vide.");
     }
 
-    match services::create_capsule_link(api, text.to_string(), None, crate::types::Ttl::OneHour) {
+    match services::create_capsule_link(
+        api,
+        text.to_string(),
+        None,
+        crate::types::Ttl::OneHour,
+        None,
+    ) {
         Ok(link) => json!({
             "content": [{ "type": "text", "text": format!("Capsule creee avec succes : {link}") }]
         }),

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-pub const VERSION: &str = "v2.0.2";
+pub const VERSION: &str = "v2.0.3";
 pub const DOMAIN: &str = "https://itylos.com";
 pub const API_CREATE: &str = "https://itylos.com/api/v2/create_secret";
 pub const API_FETCH: &str = "https://itylos.com/api/v2/fetch_secret";
@@ -139,6 +139,7 @@ pub struct SendOptions {
     pub text: String,
     pub file: Option<PathBuf>,
     pub ttl: Ttl,
+    pub password: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
