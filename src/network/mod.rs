@@ -3,7 +3,7 @@ use reqwest::blocking::Client;
 use std::time::Duration;
 
 use crate::types::{
-    API_BURN, API_CREATE, API_FETCH, BurnReq, BurnRes, CreateReq, CreateRes, FetchRes,
+    API_BURN, API_CREATE, API_FETCH, ApiErrorRes, BurnReq, BurnRes, CreateReq, CreateRes, FetchRes,
 };
 
 pub struct ItylosApi {
@@ -27,13 +27,17 @@ impl ItylosApi {
             .send()
             .context("Erreur reseau")?;
         let status = response.status();
-        let body: CreateRes = response.json().context("reponse create invalide")?;
         if !status.is_success() {
+            let err: ApiErrorRes = response.json().unwrap_or(ApiErrorRes {
+                success: false,
+                error: Some(format!("Erreur API HTTP {status}")),
+            });
             bail!(
-                body.error
+                err.error
                     .unwrap_or_else(|| format!("Erreur API HTTP {status}"))
             );
         }
+        let body: CreateRes = response.json().context("reponse create invalide")?;
         Ok(body)
     }
 
@@ -45,13 +49,17 @@ impl ItylosApi {
             .send()
             .context("Erreur reseau")?;
         let status = response.status();
-        let body: FetchRes = response.json().context("reponse fetch invalide")?;
         if !status.is_success() {
+            let err: ApiErrorRes = response.json().unwrap_or(ApiErrorRes {
+                success: false,
+                error: Some(format!("Erreur API HTTP {status}")),
+            });
             bail!(
-                body.error
+                err.error
                     .unwrap_or_else(|| format!("Erreur API HTTP {status}"))
             );
         }
+        let body: FetchRes = response.json().context("reponse fetch invalide")?;
         Ok(body)
     }
 
@@ -66,14 +74,17 @@ impl ItylosApi {
             .send()
             .context("Erreur reseau")?;
         let status = response.status();
-        let body: BurnRes = response.json().context("reponse burn invalide")?;
         if !status.is_success() {
+            let err: ApiErrorRes = response.json().unwrap_or(ApiErrorRes {
+                success: false,
+                error: Some(format!("Erreur API HTTP {status}")),
+            });
             bail!(
-                body.error
-                    .clone()
+                err.error
                     .unwrap_or_else(|| format!("Erreur API HTTP {status}"))
             );
         }
+        let body: BurnRes = response.json().context("reponse burn invalide")?;
         Ok(body)
     }
 }

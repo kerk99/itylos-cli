@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-pub const VERSION: &str = "v2.0.1";
+pub const VERSION: &str = "v2.0.2";
 pub const DOMAIN: &str = "https://itylos.com";
 pub const API_CREATE: &str = "https://itylos.com/api/v2/create_secret";
 pub const API_FETCH: &str = "https://itylos.com/api/v2/fetch_secret";
@@ -48,6 +48,13 @@ pub struct CreateReq {
     pub pwd_salt: Option<String>,
 }
 
+/// Generic error response from the server (429, 404, 410, 500, etc.)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiErrorRes {
+    pub success: bool,
+    pub error: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateRes {
     pub success: bool,
@@ -63,9 +70,11 @@ pub struct FetchRes {
     pub success: bool,
     pub payload: Option<String>,
     pub aad_hash: Option<String>,
+    #[serde(default)]
     pub has_password: bool,
     pub pwd_salt: Option<String>,
     pub expires_at: Option<String>,
+    #[serde(default)]
     pub ttl: u64,
     pub error: Option<String>,
 }

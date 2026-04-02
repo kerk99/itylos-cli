@@ -9,6 +9,7 @@
 <p align="center">
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="https://github.com/kerk99/itylos-cli/releases"><img src="https://img.shields.io/github/v/release/kerk99/itylos-cli" alt="Release"></a>
+  <a href="https://crates.io/crates/itylos-cli"><img src="https://img.shields.io/crates/v/itylos-cli.svg" alt="crates.io"></a>
 </p>
 
 <p align="center">
