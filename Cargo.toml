@@ -1,6 +1,6 @@
 [package]
 name = "itylos-cli"
-version = "2.0.2"
+version = "2.0.3"
 edition = "2024"
 authors = ["Kerki", "Mehdi"]
 description = "Sovereign ephemeral messaging CLI with local AES-256-GCM encryption and burn-on-read semantics."
@@ -23,6 +23,8 @@ colored = "=2.2.0"
 console = "=0.15.11"
 ed25519-dalek = { version = "=2.2.0", features = ["rand_core"] }
 hex = "=0.4.3"
+hmac = "=0.12.1"
+pbkdf2 = { version = "=0.12.2", default-features = false }
 rand = "=0.8.5"
 regex = "=1.11.3"
 reqwest = { version = "=0.12.23", default-features = false, features = ["blocking", "json", "rustls-tls"] }

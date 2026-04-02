@@ -227,3 +227,44 @@ pub fn print_file_extracted(name: &str, size: usize) {
         size
     );
 }
+
+pub fn print_password_reminder() {
+    println!(
+        "  {} {}",
+        "\u{26A0}".yellow().bold(),
+        "Le destinataire devra saisir le mot de passe pour d\u{00E9}chiffrer cette capsule."
+            .dimmed()
+    );
+}
+
+pub fn prompt_password() -> anyhow::Result<String> {
+    println!(
+        "\n  {} Cette capsule est prot\u{00E9}g\u{00E9}e par mot de passe.",
+        "\u{1F512}".bold()
+    );
+    let password = console::Term::stderr()
+        .read_secure_line()
+        .map_err(|_| anyhow::anyhow!("Impossible de lire le mot de passe"))?;
+    if password.is_empty() {
+        anyhow::bail!("Mot de passe requis pour d\u{00E9}chiffrer cette capsule.");
+    }
+    Ok(password)
+}
+
+pub fn prompt_new_password() -> anyhow::Result<String> {
+    eprint!("  Mot de passe pour la capsule : ");
+    let password = console::Term::stderr()
+        .read_secure_line()
+        .map_err(|_| anyhow::anyhow!("Impossible de lire le mot de passe"))?;
+    if password.is_empty() {
+        anyhow::bail!("Le mot de passe ne peut pas \u{00EA}tre vide.");
+    }
+    eprint!("  Confirmer le mot de passe : ");
+    let confirm = console::Term::stderr()
+        .read_secure_line()
+        .map_err(|_| anyhow::anyhow!("Impossible de lire la confirmation"))?;
+    if password != confirm {
+        anyhow::bail!("Les mots de passe ne correspondent pas.");
+    }
+    Ok(password)
+}

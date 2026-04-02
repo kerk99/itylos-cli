@@ -17,8 +17,17 @@ use crate::{
 };
 
 pub fn send_secret(api: &ItylosApi, options: SendOptions) -> Result<()> {
-    let link = create_capsule_link(api, options.text, options.file.clone(), options.ttl)?;
+    let link = create_capsule_link(
+        api,
+        options.text,
+        options.file.clone(),
+        options.ttl,
+        options.password.as_deref(),
+    )?;
     ui::print_link(&link);
+    if options.password.is_some() {
+        ui::print_password_reminder();
+    }
     Ok(())
 }
 
@@ -27,24 +36,26 @@ pub fn create_capsule_link(
     text: String,
     file: Option<PathBuf>,
     ttl: Ttl,
+    password: Option<&str>,
 ) -> Result<String> {
     let capsule = build_capsule(text, file)?;
     let capsule_json = serde_json::to_string(&capsule).context("Erreur de serialisation")?;
-    let encrypted = crypto::encrypt_local(&capsule_json, ttl.seconds())?;
+    let encrypted = crypto::encrypt_local_with_password(&capsule_json, ttl.seconds(), password)?;
+    let has_password = encrypted.salt_b64.is_some();
     validate_create_request_parts(
         &encrypted.payload,
         ttl.seconds(),
         &encrypted.aad_hash_hex,
-        false,
-        None,
+        has_password,
+        encrypted.salt_b64.as_deref(),
     )?;
 
     let response = api.create_secret(&CreateReq {
         payload: encrypted.payload,
         ttl: normalize_ttl(ttl.seconds()),
         aad_hash: encrypted.aad_hash_hex,
-        has_password: false,
-        pwd_salt: None,
+        has_password,
+        pwd_salt: encrypted.salt_b64,
     })?;
 
     if !response.success {
@@ -60,13 +71,26 @@ pub fn create_capsule_link(
 pub fn read_secret(api: &ItylosApi, url: &str) -> Result<()> {
     let (secret_id, key_fragment) = parse_secret_url(url)?;
     let response = api.fetch_secret(&secret_id)?;
-    validate_fetch_response(&response)?;
+    validate_fetch_response_pre_password(&response)?;
 
     let payload = response
         .payload
         .as_deref()
         .ok_or_else(|| ItylosError::Message("payload absent".to_string()))?;
-    let decrypted = crypto::decrypt_local(payload, &key_fragment, response.ttl)?;
+
+    let decrypted = if response.has_password {
+        let password = ui::prompt_password()?;
+        crypto::decrypt_local_with_password(
+            payload,
+            &key_fragment,
+            response.ttl,
+            Some(&password),
+            response.pwd_salt.as_deref(),
+        )?
+    } else {
+        crypto::decrypt_local(payload, &key_fragment, response.ttl)?
+    };
+
     ui::print_decrypted_header();
     render_capsule(&decrypted)?;
     ui::print_decrypted_footer();
@@ -154,7 +178,16 @@ fn parse_secret_url(url: &str) -> Result<(String, String)> {
     Ok((secret_id, key_fragment.to_string()))
 }
 
+#[cfg(test)]
 fn validate_fetch_response(response: &FetchRes) -> Result<()> {
+    validate_fetch_response_pre_password(response)?;
+    if response.has_password {
+        return Err(ItylosError::PasswordProtected.into());
+    }
+    Ok(())
+}
+
+fn validate_fetch_response_pre_password(response: &FetchRes) -> Result<()> {
     if !response.success {
         bail!(
             response
@@ -177,9 +210,6 @@ fn validate_fetch_response(response: &FetchRes) -> Result<()> {
         response.has_password,
         response.pwd_salt.as_deref(),
     )?;
-    if response.has_password {
-        return Err(ItylosError::PasswordProtected.into());
-    }
     Ok(())
 }
 

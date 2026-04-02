@@ -12,6 +12,7 @@ pub enum ItylosError {
     InvalidSecretId,
     #[error("TTL absent dans la reponse serveur - dechiffrement impossible.")]
     MissingTtl,
+    #[cfg(test)]
     #[error(
         "Cette capsule est protegee par mot de passe. Ouvrez ce lien dans votre navigateur pour la dechiffrer."
     )]
