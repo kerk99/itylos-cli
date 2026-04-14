@@ -1,0 +1,43 @@
+[package]
+name = "itylos-cli"
+version = "2.0.5"
+edition = "2024"
+authors = ["Kerki", "Mehdi"]
+description = "Sovereign ephemeral messaging CLI with local AES-256-GCM encryption and burn-on-read semantics."
+license = "MIT"
+repository = "https://github.com/kerk99/itylos-cli"
+keywords = ["cli", "security", "encryption", "zero-knowledge", "messaging"]
+categories = ["command-line-utilities", "cryptography"]
+rust-version = "1.85"
+
+[[bin]]
+name = "itylos"
+path = "src/main.rs"
+
+[dependencies]
+aes-gcm = { version = "=0.10.3", features = ["aes", "std"] }
+anyhow = "=1.0.100"
+base64 = "=0.22.1"
+clap = { version = "=4.5.48", features = ["derive"] }
+colored = "=2.2.0"
+console = "=0.15.11"
+ed25519-dalek = { version = "=2.2.0", features = ["rand_core"] }
+hex = "=0.4.3"
+rand = "=0.8.5"
+regex = "=1.11.3"
+reqwest = { version = "=0.12.23", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.145"
+sha2 = "=0.10.9"
+thiserror = "=2.0.17"
+which = "=7.0.2"
+zeroize = { version = "=1.8.2", features = ["alloc", "zeroize_derive"] }
+
+[dev-dependencies]
+tempfile = "=3.23.0"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,22 @@
+# Rust
+/target/
+Cargo.lock.bak
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Environment
+.env
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*.bak
+
+# Archive (legacy files, not part of the Rust CLI)
+/_archive/
