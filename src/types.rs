@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-pub const VERSION: &str = "v2.0.4";
+pub const VERSION: &str = "v2.0.6";
 pub const DOMAIN: &str = "https://itylos.com";
 pub const API_CREATE: &str = "https://itylos.com/api/v2/create_secret";
 pub const API_FETCH: &str = "https://itylos.com/api/v2/fetch_secret";
